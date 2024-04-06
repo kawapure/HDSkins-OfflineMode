@@ -60,6 +60,9 @@ public final class HDSkins implements ClientModInitializer {
     }
 
     private void onScreenInit(Screen screen, ScreenInitCallback.ButtonList buttons) {
+        if (config.disablePantsButton.get()) {
+            return;
+        }
         if (screen instanceof TitleScreen) {
             Button button = buttons.addButton(new Button(screen.width - 50, screen.height - 50, 20, 20))
                 .onClick(sender -> MinecraftClient.getInstance().setScreen(GuiSkins.create(screen, skinServerList)));
