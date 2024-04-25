@@ -232,9 +232,7 @@ public class GuiSkins extends GameGui {
             .onUpdate(sender -> sender.setEnabled(uploader.canClearAny()))
             .onClick(sender -> {
                 SkinType.REGISTRY.forEach(type -> {
-                    if (uploader.canClear(type)) {
-                        uploader.uploadSkin(StatusBanner.HD_SKINS_REQUEST, SkinUpload.delete(previewer.getActiveSkinType(), session));
-                    }
+                    uploader.uploadSkin(StatusBanner.HD_SKINS_REQUEST, SkinUpload.delete(previewer.getActiveSkinType(), session));
                 });
             })
             .styled(s -> s
