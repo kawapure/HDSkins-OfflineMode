@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.common.cache.CacheBuilder;
@@ -41,12 +40,32 @@ public class SkinLoader {
 
     private final FileStore fileStore = new FileStore();
 
-    public Supplier<ProvidedSkins> get(GameProfile profile) {
-        return () -> getNow(profile);
-    }
+    public DynamicSkinTextures get(GameProfile profile) {
+        return new DynamicSkinTextures() {
+            private CompletableFuture<ProvidedSkins> loader = load(profile);
 
-    public ProvidedSkins getNow(GameProfile profile) {
-        return load(profile).getNow(ProvidedSkins.EMPTY);
+            @Override
+            public Set<Identifier> getProvidedSkinTypes() {
+                return loader.getNow(ProvidedSkins.EMPTY).getProvidedSkinTypes();
+            }
+
+            @Override
+            public Optional<Identifier> getSkin(SkinType type) {
+                return loader.getNow(ProvidedSkins.EMPTY).getSkin(type);
+            }
+
+            @Override
+            public String getModel(String fallback) {
+                return loader.getNow(ProvidedSkins.EMPTY).getModel(fallback);
+            }
+
+            @Override
+            public boolean hasChanged() {
+                loader = load(profile);
+                return loader.isDone();
+            }
+
+        };
     }
 
     public CompletableFuture<ProvidedSkins> load(GameProfile profile) {
@@ -124,6 +143,12 @@ public class SkinLoader {
         @Override
         public String getModel(String fallback) {
             return model.orElse(fallback);
+        }
+
+        @Override
+        public boolean hasChanged() {
+            // TODO Auto-generated method stub
+            return false;
         }
     }
 }

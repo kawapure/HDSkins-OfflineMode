@@ -8,7 +8,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.base.Suppliers;
 import com.minelittlepony.hdskins.client.VanillaModels;
 import com.minelittlepony.hdskins.profile.SkinType;
 
@@ -34,19 +33,21 @@ public interface DynamicSkinTextures {
 
     String getModel(String fallback);
 
-    default SkinTextures toSkinTextures() {
+    boolean hasChanged();
+
+    static SkinTextures toSkinTextures(DynamicSkinTextures dynamic) {
         return new SkinTextures(
-                getSkin(SkinType.SKIN).orElse(null),
-                null,
-                getSkin(SkinType.CAPE).orElse(null),
-                getSkin(SkinType.ELYTRA).orElse(null),
-                VanillaModels.isSlim(getModel(VanillaModels.DEFAULT)) ? Model.SLIM : Model.WIDE,
-                false
-            );
+            dynamic.getSkin(SkinType.SKIN).orElse(null),
+            null,
+            dynamic.getSkin(SkinType.CAPE).orElse(null),
+            dynamic.getSkin(SkinType.ELYTRA).orElse(null),
+            VanillaModels.isSlim(dynamic.getModel(VanillaModels.DEFAULT)) ? Model.SLIM : Model.WIDE,
+            false
+        );
     }
 
-    static Supplier<DynamicSkinTextures> of(Supplier<SkinTextures> supplier) {
-        return Suppliers.memoize(() -> new DynamicSkinTextures() {
+    static DynamicSkinTextures of(Supplier<SkinTextures> supplier) {
+        return new DynamicSkinTextures() {
             @Override
             public Set<Identifier> getProvidedSkinTypes() {
                 return TEXTURE_LOOKUP.keySet().stream().filter(type -> getSkin(type).isEmpty()).map(SkinType::getId).collect(Collectors.toSet());
@@ -61,27 +62,38 @@ public interface DynamicSkinTextures {
             public String getModel(String fallback) {
                 return supplier.get().model().getName();
             }
-        })::get;
+
+            @Override
+            public boolean hasChanged() {
+                return false;
+            }
+        };
     }
 
-    static DynamicSkinTextures union(Supplier<? extends DynamicSkinTextures> a, Supplier<? extends DynamicSkinTextures> b) {
+    default DynamicSkinTextures union(DynamicSkinTextures b) {
+        final DynamicSkinTextures a = this;
         return new DynamicSkinTextures() {
             @Override
             public Set<Identifier> getProvidedSkinTypes() {
                 return Stream.concat(
-                        a.get().getProvidedSkinTypes().stream(),
-                        b.get().getProvidedSkinTypes().stream()
+                        a.getProvidedSkinTypes().stream(),
+                        b.getProvidedSkinTypes().stream()
                 ).distinct().collect(Collectors.toSet());
             }
 
             @Override
             public Optional<Identifier> getSkin(SkinType type) {
-                return Optional.ofNullable(a.get().getSkin(type, b.get()));
+                return Optional.ofNullable(a.getSkin(type, b));
             }
 
             @Override
             public String getModel(String fallback) {
-                return a.get().getModel(b.get().getModel(fallback));
+                return a.getModel(b.getModel(fallback));
+            }
+
+            @Override
+            public boolean hasChanged() {
+                return a.hasChanged() || b.hasChanged();
             }
         };
     }
