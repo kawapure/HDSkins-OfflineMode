@@ -10,9 +10,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.minelittlepony.hdskins.client.HDSkins;
+import com.minelittlepony.hdskins.client.PlayerSkinLayers;
 import com.minelittlepony.hdskins.client.PlayerSkins;
 import com.minelittlepony.hdskins.client.ducks.ClientPlayerInfo;
-import com.minelittlepony.hdskins.client.profile.DynamicSkinTextures;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.util.SkinTextures;
@@ -25,21 +25,18 @@ abstract class MixinPlayerListEntry implements ClientPlayerInfo {
     private @Final Supplier<SkinTextures> texturesSupplier;
 
     private PlayerSkins hdskinsPlayerSkins;
-    private DynamicSkinTextures hdSkinsDynamicSkins;
 
     @Override
     public PlayerSkins getSkins() {
         if (hdskinsPlayerSkins == null) {
-            hdskinsPlayerSkins = PlayerSkins.of(profile, texturesSupplier);
+            PlayerSkinLayers layers = PlayerSkinLayers.of(profile, texturesSupplier);
+            hdskinsPlayerSkins = new PlayerSkins(layers, new PlayerSkinLayers.Layer(HDSkins.getInstance().getSkinPrioritySorter().createDynamicTextures(layers)));
         }
         return hdskinsPlayerSkins;
     }
 
     @Inject(method = "getSkinTextures", at = @At("HEAD"), cancellable = true)
     private void onGetSkinTextures(CallbackInfoReturnable<SkinTextures> info) {
-        if (hdSkinsDynamicSkins == null) {
-            hdSkinsDynamicSkins = HDSkins.getInstance().getSkinPrioritySorter().createDynamicTextures(getSkins());
-        }
-        info.setReturnValue(hdSkinsDynamicSkins.toSkinTextures());
+        info.setReturnValue(getSkins().sorted().getSkinTextures());
     }
 }

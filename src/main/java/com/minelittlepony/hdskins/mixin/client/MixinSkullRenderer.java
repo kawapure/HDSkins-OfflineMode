@@ -1,6 +1,7 @@
 package com.minelittlepony.hdskins.mixin.client;
 
 import com.minelittlepony.hdskins.client.HDSkins;
+import com.minelittlepony.hdskins.client.profile.SkinLoader.ProvidedSkins;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.block.SkullBlock;
@@ -24,7 +25,7 @@ abstract class MixinSkullRenderer implements BlockEntityRenderer<SkullBlockEntit
             at = @At(value = "HEAD"))
     private static void onGetSkullTexture(SkullBlock.SkullType type, @Nullable GameProfile profile, CallbackInfoReturnable<RenderLayer> info) {
         if (type == SkullBlock.Type.PLAYER && profile != null) {
-            Identifier skin = HDSkins.getInstance().getProfileRepository().getNow(profile).skins().get(SkinType.SKIN);
+            Identifier skin = HDSkins.getInstance().getProfileRepository().load(profile).getNow(ProvidedSkins.EMPTY).skins().get(SkinType.SKIN);
 
             if (skin != null) {
                 info.setReturnValue(RenderLayer.getEntityCutoutNoCullZOffset(skin));

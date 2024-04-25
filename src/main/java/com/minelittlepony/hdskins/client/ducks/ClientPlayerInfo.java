@@ -3,6 +3,7 @@ package com.minelittlepony.hdskins.client.ducks;
 import java.util.Optional;
 
 import com.minelittlepony.hdskins.client.PlayerSkins;
+
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
