@@ -3,12 +3,12 @@ package com.minelittlepony.hdskins.mixin.client;
 import com.minelittlepony.hdskins.client.HDSkins;
 import com.minelittlepony.hdskins.client.profile.SkinLoader.ProvidedSkins;
 import com.minelittlepony.hdskins.profile.SkinType;
-import com.mojang.authlib.GameProfile;
 import net.minecraft.block.SkullBlock;
 import net.minecraft.block.entity.SkullBlockEntity;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.SkullBlockEntityRenderer;
+import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.util.Identifier;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,15 +20,16 @@ import org.jetbrains.annotations.Nullable;
 
 @Mixin(SkullBlockEntityRenderer.class)
 abstract class MixinSkullRenderer implements BlockEntityRenderer<SkullBlockEntity> {
-    @Inject(method = "getRenderLayer(Lnet/minecraft/block/SkullBlock$SkullType;Lcom/mojang/authlib/GameProfile;)Lnet/minecraft/client/render/RenderLayer;",
+    @Inject(method = "getRenderLayer(Lnet/minecraft/block/SkullBlock$SkullType;Lnet/minecraft/component/type/ProfileComponent;)Lnet/minecraft/client/render/RenderLayer;",
             cancellable = true,
             at = @At(value = "HEAD"))
-    private static void onGetSkullTexture(SkullBlock.SkullType type, @Nullable GameProfile profile, CallbackInfoReturnable<RenderLayer> info) {
+    private static void onGetSkullTexture(SkullBlock.SkullType type, @Nullable ProfileComponent profile, CallbackInfoReturnable<RenderLayer> info) {
         if (type == SkullBlock.Type.PLAYER && profile != null) {
-            Identifier skin = HDSkins.getInstance().getProfileRepository().load(profile).getNow(ProvidedSkins.EMPTY).skins().get(SkinType.SKIN);
+            @Nullable
+            Identifier skin = HDSkins.getInstance().getProfileRepository().load(profile.gameProfile()).getNow(ProvidedSkins.EMPTY).skins().get(SkinType.SKIN);
 
             if (skin != null) {
-                info.setReturnValue(RenderLayer.getEntityCutoutNoCullZOffset(skin));
+                info.setReturnValue(RenderLayer.getEntityTranslucent(skin));
             }
         }
     }

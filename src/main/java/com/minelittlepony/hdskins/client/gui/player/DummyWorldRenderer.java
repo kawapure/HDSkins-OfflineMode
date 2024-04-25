@@ -40,7 +40,16 @@ final class DummyWorldRenderer extends WorldRenderer {
         // noop
     }
     @Override
-    public void render(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f positionMatrix) {
+    public void render(
+            float tickDelta,
+            long limitTime,
+            boolean renderBlockOutline,
+            Camera camera,
+            GameRenderer gameRenderer,
+            LightmapTextureManager lightmapTextureManager,
+            Matrix4f matrix4f,
+            Matrix4f matrix4f2
+        ) {
         // noop
     }
     @Override
@@ -72,11 +81,11 @@ final class DummyWorldRenderer extends WorldRenderer {
         // noop
     }
     @Override
-    public void renderSky(MatrixStack matrices, Matrix4f projectionMatrix, float tickDelta, Camera camera, boolean bl, Runnable runnable) {
+    public void renderSky(Matrix4f matrix4f, Matrix4f projectionMatrix, float tickDelta, Camera camera, boolean thickFog, Runnable fogCallback) {
         // noop
     }
     @Override
-    public void renderClouds(MatrixStack matrices, Matrix4f projectionMatrix, float tickDelta, double d, double e, double f) {
+    public void renderClouds(MatrixStack matrices, Matrix4f matrix4f, Matrix4f matrix4f2, float tickDelta, double cameraX, double cameraY, double cameraZ) {
         // noop
     }
     @Override

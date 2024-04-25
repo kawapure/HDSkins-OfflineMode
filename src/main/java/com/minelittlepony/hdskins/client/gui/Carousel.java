@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
+import org.joml.Matrix4fStack;
+
 import com.minelittlepony.common.client.gui.ITextContext;
 import com.minelittlepony.common.client.gui.dimension.Bounds;
 import com.minelittlepony.hdskins.client.HDSkins;
@@ -28,6 +30,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.math.Vec3d;
 
 public class Carousel<T extends PlayerSkins<? extends PlayerSkins.PlayerSkin>> implements Closeable, ITextContext {
     public static final int HOR_MARGIN = 30;
@@ -140,8 +143,8 @@ public class Carousel<T extends PlayerSkins<? extends PlayerSkins.PlayerSkin>> i
         thePlayer.setHeadYaw(lookX * lookFactor);
         thePlayer.setPitch(thePlayer.isSleeping() ? 10 : (float)Math.atan(mouseY / 40) * -20);
 
-        MatrixStack modelStack = RenderSystem.getModelViewStack();
-        modelStack.push();
+        Matrix4fStack modelStack = RenderSystem.getModelViewStack();
+        modelStack.pushMatrix();
         modelStack.translate(xPosition, yPosition, 1050);
         modelStack.scale(1, 1, -1);
         RenderSystem.applyModelViewMatrix();
@@ -164,7 +167,7 @@ public class Carousel<T extends PlayerSkins<? extends PlayerSkins.PlayerSkin>> i
         immediate.draw();
 
         matrixStack.pop();
-        modelStack.pop();
+        modelStack.popMatrix();
         RenderSystem.applyModelViewMatrix();
         DiffuseLighting.enableGuiDepthLighting();
     }
@@ -178,10 +181,12 @@ public class Carousel<T extends PlayerSkins<? extends PlayerSkins.PlayerSkin>> i
             thePlayer.boat.render(matrixStack, renderContext);
         }
 
-        double offset = thePlayer.getY();
+        Vec3d offset = thePlayer.getPos();
 
         if (thePlayer.hasVehicle()) {
-            offset = thePlayer.getY() + thePlayer.getRidingOffset(thePlayer.getVehicle());
+            Vec3d riderPosition = thePlayer.getVehicle().getPassengerRidingPos(thePlayer);
+            Vec3d attachmentOffset = thePlayer.getVehicleAttachmentPos(thePlayer.getVehicle());
+            offset = riderPosition.subtract(attachmentOffset);
         }
 
         float x = 0;
@@ -193,7 +198,7 @@ public class Carousel<T extends PlayerSkins<? extends PlayerSkins.PlayerSkin>> i
         }
 
         matrixStack.push();
-        matrixStack.translate(0.001, offset, 0.001);
+        matrixStack.translate(offset.x + 0.001, offset.y, offset.z + 0.001);
 
         if (thePlayer.isSleeping()) {
             matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(90));

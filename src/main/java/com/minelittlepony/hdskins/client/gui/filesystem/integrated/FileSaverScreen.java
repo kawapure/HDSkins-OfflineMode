@@ -80,7 +80,7 @@ public class FileSaverScreen extends FileSelectorScreen {
         } else {
             filesList.buttons().forEach(p -> ((PathButton)p).clearFocus());
 
-            focusOn(sender);
+            setInitialFocus(sender);
             saveBtn.setEnabled(true);
             textInput.setText(sender.path.toString());
         }

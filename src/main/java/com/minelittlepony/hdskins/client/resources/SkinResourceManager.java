@@ -109,6 +109,7 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
         try (var reader = new InputStreamReader(res.getInputStream())) {
             return Optional.ofNullable(GSON.fromJson(reader, SkinData.class));
         } catch (JsonParseException e) {
+            LOGGER.warn("Invalid skins.json in " + res.getPackId(), e);
         } catch (IOException ignored) {}
 
         return Optional.empty();

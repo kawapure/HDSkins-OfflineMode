@@ -8,7 +8,6 @@
   "client": [
     "client.MixinPlayerListEntry",
     "client.MixinPlayerSkinTexture",
-    "client.MixinSkullBlockEntity",
     "client.MixinSkullRenderer"
   ],
   "injectors": {

@@ -115,7 +115,7 @@ public class EquipmentList extends JsonDataLoader implements IdentifiableResourc
         }
 
         public SoundEvent getSound() {
-            return sound == null ? SoundEvents.ITEM_ARMOR_EQUIP_GENERIC : sound;
+            return sound == null ? SoundEvents.ITEM_ARMOR_EQUIP_GENERIC.value() : sound;
         }
 
         public ItemStack getStack(EquipmentSlot slot) {

@@ -48,7 +48,7 @@ public class DummyPlayer extends AbstractClientPlayerEntity {
 
     public DummyPlayer(ClientWorld world, PlayerSkins<?> textures) {
         super(world, MinecraftClient.getInstance().getGameProfile());
-        refreshPositionAndAngles(0.5D, 0, 0.5D, 0, 0);
+        refreshPositionAndAngles(0, 0, 0, 0, 0);
 
         this.textures = textures;
         this.boat = new MrBoaty(world);

@@ -79,6 +79,7 @@ public interface Texture extends AutoCloseable {
             return id;
         }
 
+        @SuppressWarnings("deprecation")
         public InputStream openStream() throws IOException {
             return new URL(fileUrl).openStream();
         }

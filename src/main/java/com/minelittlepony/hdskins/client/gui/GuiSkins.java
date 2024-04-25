@@ -332,7 +332,7 @@ public class GuiSkins extends GameGui {
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float tickDelta) {
         if (client.world == null) {
-            panorama.render(tickDelta, 1);
+            panorama.render(context, width, height, 1, tickDelta);
         } else {
             renderInGameBackground(context);
         }

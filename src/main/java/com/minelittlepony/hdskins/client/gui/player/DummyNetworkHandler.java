@@ -1,5 +1,6 @@
 package com.minelittlepony.hdskins.client.gui.player;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -22,22 +23,26 @@ import net.minecraft.registry.*;
 import net.minecraft.resource.*;
 import net.minecraft.resource.featuretoggle.FeatureSet;
 
-class DummyNetworkHandler {
-    public static final Supplier<ClientPlayNetworkHandler> INSTANCE = Suppliers.memoize(() -> {
-        var registries = ClientDynamicRegistryType.createCombinedDynamicRegistries();
-        return new ClientPlayNetworkHandler(MinecraftClient.getInstance(), new ClientConnection(NetworkSide.CLIENTBOUND), new ClientConnectionState(
+interface DummyNetworkHandler {
+    Supplier<ClientPlayNetworkHandler> INSTANCE = Suppliers.memoize(() -> new ClientPlayNetworkHandler(MinecraftClient.getInstance(), new ClientConnection(NetworkSide.CLIENTBOUND), createConnectionState()));
+
+    private static ClientConnectionState createConnectionState() {
+        return new ClientConnectionState(
                 new GameProfile(UUID.randomUUID(), "dumdum"),
                 new WorldSession(TelemetrySender.NOOP, false, null, null),
-                registries.with(ClientDynamicRegistryType.REMOTE, RegistryLoader.load(new LifecycledResourceManagerImpl(ResourceType.SERVER_DATA, List.of(
-                        VanillaDataPackProvider.createDefaultPack()
-                )), registries.getCombinedRegistryManager(), Stream.concat(
-                    RegistryLoader.DYNAMIC_REGISTRIES.stream(),
-                    RegistryLoader.DIMENSION_REGISTRIES.stream()
-                ).toList())).getCombinedRegistryManager(),
+                createRegistries(),
                 FeatureSet.empty(),
                 (String)null,
                 (ServerInfo)null,
-                (Screen)null
-        ));
-    });
+                (Screen)null, new HashMap<>(), null, false
+        );
+    }
+
+    private static DynamicRegistryManager.Immutable createRegistries() {
+        var registries = ClientDynamicRegistryType.createCombinedDynamicRegistries();
+        return registries.with(ClientDynamicRegistryType.REMOTE, RegistryLoader.loadFromResource(new LifecycledResourceManagerImpl(ResourceType.SERVER_DATA,
+                List.of(VanillaDataPackProvider.createDefaultPack())), registries.getCombinedRegistryManager(),
+                Stream.concat(RegistryLoader.DYNAMIC_REGISTRIES.stream(), RegistryLoader.DIMENSION_REGISTRIES.stream()).toList()
+        )).getCombinedRegistryManager();
+    }
 }

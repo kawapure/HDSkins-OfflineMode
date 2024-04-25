@@ -31,8 +31,8 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
 
     private static final Identifier SKIN_SERVERS = new Identifier(HDSkins.MOD_ID, "skins/servers.json");
 
-    private static final Logger logger = LogManager.getLogger();
-    private static final Gson gson = new GsonBuilder()
+    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(SkinServer.class, SkinServerSerializer.instance)
             .create();
 
@@ -47,14 +47,14 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
     public void reload(ResourceManager mgr) {
         skinServers.clear();
 
-        logger.info("Loading skin servers");
+        LOGGER.info("Loading skin servers");
         for (Resource res : mgr.getAllResources(SKIN_SERVERS)) {
-            logger.info("Found {} in {}", SKIN_SERVERS, res.getResourcePackName());
+            LOGGER.info("Found {} in {}", SKIN_SERVERS, res.getPackId());
             try (var reader = new InputStreamReader(res.getInputStream())) {
-                SkinServerJson json = gson.fromJson(reader, SkinServerJson.class);
+                SkinServerJson json = GSON.fromJson(reader, SkinServerJson.class);
                 json.apply(skinServers);
             } catch (IOException | JsonParseException e) {
-                logger.warn("Unable to load resource '{}' from '{}'", SKIN_SERVERS, res.getResourcePackName(), e);
+                LOGGER.warn("Unable to load resource '{}' from '{}'", SKIN_SERVERS, res.getPackId(), e);
             }
         }
     }
@@ -92,7 +92,7 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
             if (overwrite) {
                 skinServers.clear();
             }
-            logger.info("Found {} servers", servers.size());
+            LOGGER.info("Found {} servers", servers.size());
             insert.consumer.accept(skinServers, servers.stream().map(Gateway::new).toList());
         }
     }

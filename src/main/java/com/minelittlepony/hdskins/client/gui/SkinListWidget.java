@@ -3,6 +3,7 @@ package com.minelittlepony.hdskins.client.gui;
 import java.util.List;
 import java.util.Optional;
 
+import org.joml.Matrix4fStack;
 import org.lwjgl.glfw.GLFW;
 
 import com.minelittlepony.common.client.gui.GameGui;
@@ -229,8 +230,8 @@ public class SkinListWidget implements Carousel.Element {
         float swingProgress = thePlayer.handSwingProgress;
         thePlayer.handSwingProgress = 0;
 
-        MatrixStack modelStack = RenderSystem.getModelViewStack();
-        modelStack.push();
+        Matrix4fStack modelStack = RenderSystem.getModelViewStack();
+        modelStack.pushMatrix();
         modelStack.translate(xPosition, yPosition, 1050);
         modelStack.scale(1, 1, -1);
         RenderSystem.applyModelViewMatrix();
@@ -252,7 +253,7 @@ public class SkinListWidget implements Carousel.Element {
         immediate.draw();
 
         matrixStack.pop();
-        modelStack.pop();
+        modelStack.popMatrix();
         RenderSystem.applyModelViewMatrix();
         DiffuseLighting.enableGuiDepthLighting();
 
