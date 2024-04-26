@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -20,13 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.minelittlepony.hdskins.client.HDSkins;
+import com.minelittlepony.hdskins.client.Memoize;
 import com.minelittlepony.hdskins.client.profile.DynamicSkinTextures;
 import com.minelittlepony.hdskins.client.resources.SkinResourceManager.SkinData.Skin;
 import com.minelittlepony.hdskins.profile.SkinType;
@@ -63,16 +61,12 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
     private final Map<SkinType, SkinStore> store = new HashMap<>();
     private long lastLoadTime;
 
-    private final LoadingCache<Identifier, CompletableFuture<Identifier>> textures = CacheBuilder.newBuilder()
-            .expireAfterAccess(15, TimeUnit.MINUTES)
-            .build(CacheLoader.from(loader::loadAsync));
+    private final LoadingCache<Identifier, CompletableFuture<Identifier>> textures = Memoize.createAsyncLoadingCache(15, loader::loadAsync);
 
     @Override
     public CompletableFuture<Void> reload(Synchronizer sync, ResourceManager sender,
             Profiler serverProfiler, Profiler clientProfiler,
             Executor serverExecutor, Executor clientExecutor) {
-
-        sync.getClass();
         return sync.whenPrepared(null).thenRunAsync(() -> {
             clientProfiler.startTick();
             clientProfiler.push("Reloading User's HD Skins");
