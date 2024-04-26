@@ -138,6 +138,7 @@ public class GuiSkins extends GameGui {
                     List<SkinType> types = uploader.getSupportedSkinTypes().toList();
                     i %= types.size();
                     uploader.setSkinType(types.get(i));
+                    uploader.scheduleReload();
                     return i;
                 })
                 .onUpdate(sender -> sender.setEnabled(uploader.getFeatures().contains(Feature.MODEL_TYPES)));
@@ -253,9 +254,9 @@ public class GuiSkins extends GameGui {
                 .getBounds();
 
         addButton(new Button(area.left - 25, area.top, 20, 20))
-                .onUpdate(sender -> sender.setEnabled(uploader.getFeatures().contains(Feature.DOWNLOAD_USER_SKIN) && uploader.canClear(previewer.getActiveSkinType()) && !chooser.pickingInProgress()))
+                .onUpdate(sender -> sender.setEnabled(uploader.getFeatures().contains(Feature.DOWNLOAD_USER_SKIN) && uploader.hasUploaded(previewer.getActiveSkinType()) && !chooser.pickingInProgress()))
                 .onClick(sender -> {
-                    if (uploader.canClear(previewer.getActiveSkinType())) {
+                    if (uploader.hasUploaded(previewer.getActiveSkinType())) {
                         chooser.openSavePNG(uploader, I18n.translate("hdskins.save.title"), client.getSession().getUsername());
                     }
                 })
@@ -289,6 +290,7 @@ public class GuiSkins extends GameGui {
     @Override
     public void onDisplayed() {
         dropper.subscribe();
+        uploader.scheduleReload();
     }
 
     protected boolean canTakeEvents() {
@@ -329,12 +331,13 @@ public class GuiSkins extends GameGui {
 
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-        if (client.world == null) {
-            panorama.render(context, width, height, 1, tickDelta);
-        } else {
-            renderInGameBackground(context);
-        }
+        super.renderBackground(context, mouseX, mouseY, tickDelta);
         previewer.render(context, mouseX, mouseY, tickDelta, chooser, uploader);
+    }
+
+    @Override
+    protected void renderPanoramaBackground(DrawContext context, float delta) {
+        panorama.render(context, this.width, this.height, 1.0F, this.getPanoramaTickDelta());
     }
 
     @Override
