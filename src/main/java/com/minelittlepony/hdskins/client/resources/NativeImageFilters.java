@@ -4,11 +4,8 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.minelittlepony.hdskins.client.Memoize;
 
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import net.minecraft.client.texture.NativeImage;
@@ -45,9 +42,7 @@ public interface NativeImageFilters {
 
             return copy;
         });
-        final LoadingCache<Pair<Identifier, TextureLoader.Exclusion>, CompletableFuture<Identifier>> cache = CacheBuilder.newBuilder()
-                .expireAfterAccess(15, TimeUnit.MINUTES)
-                .build(CacheLoader.from(pair -> loader.loadAsync(pair.left(), pair.right())));
+        final LoadingCache<Pair<Identifier, TextureLoader.Exclusion>, CompletableFuture<Identifier>> cache = Memoize.createAsyncLoadingCache(15, pair -> loader.loadAsync(pair.left(), pair.right()));
 
         return (id, fallback, exclusion) -> {
             try {
