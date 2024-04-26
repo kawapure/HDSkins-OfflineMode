@@ -128,7 +128,7 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
     }
 
     private boolean isSkinOperationsBlocked() {
-        return !isOnline() || hasBannerMessage() || isBusy();
+        return hasStatus() || hasBannerMessage() || isBusy();
     }
 
     public boolean canUpload(SkinType type) {
@@ -136,7 +136,11 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
     }
 
     public boolean canClear(SkinType type) {
-        return getFeatures().contains(Feature.DELETE_USER_SKIN) && !isSkinOperationsBlocked() && previewer.getRemote().getSkins().get(type).isReady();
+        return getFeatures().contains(Feature.DELETE_USER_SKIN) && !isSkinOperationsBlocked() && hasUploaded(type);
+    }
+
+    public boolean hasUploaded(SkinType type) {
+        return previewer.getRemote().getSkins().get(type).isReady();
     }
 
     public boolean canClearAny() {
