@@ -8,6 +8,8 @@ import com.minelittlepony.hdskins.client.HDSkins;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.minecraft.MinecraftProfileTextures;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.util.UUIDTypeAdapter;
 
 import net.minecraft.client.MinecraftClient;
@@ -62,7 +64,20 @@ public class ProfileUtils {
         }).filter(Objects::nonNull);
     }
 
+    public static <T> GameProfile writeCustomBlob(GameProfile profile, String key, T data) {
+        PropertyMap properties = profile.getProperties();
+        String json = GSON.toJson(data);
+        properties.put(key, new Property(key, StandardCharsets.ISO_8859_1.decode(Base64.getEncoder().encode(StandardCharsets.UTF_8.encode(json))).toString()));
+        return profile;
+    }
+
+    public static void deleteProperty(GameProfile profile, String key) {
+        profile.getProperties().removeAll(key);
+    }
+
     public record TextureData (
+            @SerializedName("timestamp")
+            long timestamp,
             @SerializedName("textures")
             Map<SkinType, MinecraftProfileTexture> textures) {
     }

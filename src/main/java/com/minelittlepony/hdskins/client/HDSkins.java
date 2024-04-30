@@ -3,6 +3,7 @@ package com.minelittlepony.hdskins.client;
 import com.minelittlepony.common.client.gui.element.Button;
 import com.minelittlepony.common.event.ScreenInitCallback;
 import com.minelittlepony.common.util.GamePaths;
+import com.minelittlepony.hdskins.HDSkinsServer;
 import com.minelittlepony.hdskins.client.gui.GuiSkins;
 import com.minelittlepony.hdskins.client.profile.SkinLoader;
 import com.minelittlepony.hdskins.client.resources.EquipmentList;
@@ -39,8 +40,6 @@ public final class HDSkins implements ClientModInitializer {
     }
 
     private final HDConfig config = new HDConfig(GamePaths.getConfigDirectory().resolve("hdskins.json"));
-
-    private final SkinServerList skinServerList = new SkinServerList();
     private final EquipmentList equipmentList = new EquipmentList();
     private final SkinResourceManager resources = new SkinResourceManager();
     private final SkinLoader repository = new SkinLoader();
@@ -59,7 +58,6 @@ public final class HDSkins implements ClientModInitializer {
     public void onInitializeClient() {
         config.load();
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(resources);
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(skinServerList);
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(equipmentList);
         ScreenInitCallback.EVENT.register(this::onScreenInit);
 
@@ -72,7 +70,7 @@ public final class HDSkins implements ClientModInitializer {
         }
         if (screen instanceof TitleScreen) {
             Button button = buttons.addButton(new Button(screen.width - 50, screen.height - 50, 20, 20))
-                .onClick(sender -> MinecraftClient.getInstance().setScreen(GuiSkins.create(screen, skinServerList)));
+                .onClick(sender -> MinecraftClient.getInstance().setScreen(GuiSkins.create(screen, HDSkinsServer.getInstance().getServers())));
             button.getStyle()
                     .setIcon(new ItemStack(Items.LEATHER_LEGGINGS), 0x3c5dcb)
                     .setTooltip("hdskins.manager", 0, 10);
@@ -88,8 +86,9 @@ public final class HDSkins implements ClientModInitializer {
         return repository;
     }
 
+    @Deprecated
     public SkinServerList getSkinServerList() {
-        return skinServerList;
+        return HDSkinsServer.getInstance().getServers();
     }
 
     public EquipmentList getDummyPlayerEquipmentList() {

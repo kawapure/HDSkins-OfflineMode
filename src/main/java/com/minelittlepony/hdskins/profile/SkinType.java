@@ -15,6 +15,8 @@ import com.minelittlepony.common.util.registry.RegistryTypeAdapter;
 import com.minelittlepony.common.util.registry.Registries;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -24,9 +26,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
 
 public class SkinType implements Comparable<SkinType> {
-
     public static final SkinType UNKNOWN = new SkinType(new Identifier("hdskins", "unknown"), ItemStack.EMPTY);
-
     public static final Registry<SkinType> REGISTRY = Registries.createDefaulted(new Identifier("hdskins", "skin_type"), SkinType::getId, UNKNOWN);
 
     private static final TypeAdapter<SkinType> ADAPTER = RegistryTypeAdapter.of(REGISTRY, (ls, registry) -> {
@@ -64,8 +64,8 @@ public class SkinType implements Comparable<SkinType> {
         return getId().getNamespace() + "/" + getId().getPath();
     }
 
+    @Environment(value = EnvType.CLIENT)
     public Style getStyle() {
-
         if (iconStack.getItem() == Items.BARRIER) {
             return new Style()
                     .setIcon(new TextureSprite()

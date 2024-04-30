@@ -3,6 +3,7 @@ package com.minelittlepony.hdskins.client;
 import java.util.*;
 import java.util.function.Supplier;
 
+import com.minelittlepony.hdskins.Memoize;
 import com.minelittlepony.hdskins.client.profile.DynamicSkinTextures;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.mojang.authlib.GameProfile;

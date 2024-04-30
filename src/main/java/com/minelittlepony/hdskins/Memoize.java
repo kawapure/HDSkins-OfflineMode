@@ -1,4 +1,4 @@
-package com.minelittlepony.hdskins.client;
+package com.minelittlepony.hdskins;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

@@ -5,7 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import com.google.common.cache.LoadingCache;
-import com.minelittlepony.hdskins.client.Memoize;
+import com.minelittlepony.hdskins.Memoize;
 
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import net.minecraft.client.texture.NativeImage;

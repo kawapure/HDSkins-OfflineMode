@@ -51,9 +51,12 @@ public class ValhallaSkinServer implements SkinServer {
     public boolean ownsUrl(String url) {
         try {
             url = new URI(url).getHost();
+            String domain = new URI(address).getHost();
+
+            return domain.contentEquals(url) || (url.startsWith("textures") && domain.contentEquals(url.replace("textures", "skins")));
         } catch (final URISyntaxException ignored) { }
 
-        return address.contentEquals(url);
+        return false;
     }
 
     private String getApiPrefix() {
