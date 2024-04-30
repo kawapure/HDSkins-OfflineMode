@@ -18,6 +18,7 @@ import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.resource.ResourceType;
+import net.minecraft.util.Identifier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,10 @@ public final class HDSkins implements ClientModInitializer {
 
     public static HDSkins getInstance() {
         return instance;
+    }
+
+    public static Identifier id(String name) {
+        return new Identifier(MOD_ID, name);
     }
 
     private final HDConfig config = new HDConfig(GamePaths.getConfigDirectory().resolve("hdskins.json"));

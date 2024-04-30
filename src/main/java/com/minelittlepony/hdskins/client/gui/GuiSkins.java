@@ -38,7 +38,8 @@ import java.util.function.BooleanSupplier;
  * The top-level interface for the skin uploader.
  */
 public class GuiSkins extends GameGui {
-    public static final Identifier WIDGETS_TEXTURE = new Identifier("hdskins", "textures/gui/widgets.png");
+    public static final Identifier WIDGETS_TEXTURE = HDSkins.id("textures/gui/widgets.png");
+    public static final Identifier PANORAMA_TEXTURE = HDSkins.id("textures/cubemaps/panorama");
     public static final Text HD_SKINS_TITLE = Text.translatable("hdskins.gui.title");
     public static final Text HD_SKINS_OPTION_DISABLED_DESC = Text.translatable("hdskins.warning.disabled.description");
 
@@ -115,7 +116,7 @@ public class GuiSkins extends GameGui {
     }
 
     protected Identifier getBackground() {
-        return new Identifier(HDSkins.MOD_ID, "textures/cubemaps/panorama");
+        return PANORAMA_TEXTURE;
     }
 
     @Override
@@ -137,6 +138,7 @@ public class GuiSkins extends GameGui {
                     List<SkinType> types = uploader.getSupportedSkinTypes().toList();
                     i %= types.size();
                     uploader.setSkinType(types.get(i));
+                    uploader.scheduleReload();
                     return i;
                 })
                 .onUpdate(sender -> sender.setEnabled(uploader.getFeatures().contains(Feature.MODEL_TYPES)));
@@ -231,9 +233,7 @@ public class GuiSkins extends GameGui {
             .onUpdate(sender -> sender.setEnabled(uploader.canClearAny()))
             .onClick(sender -> {
                 SkinType.REGISTRY.forEach(type -> {
-                    if (uploader.canClear(type)) {
-                        uploader.uploadSkin(StatusBanner.HD_SKINS_REQUEST, SkinUpload.delete(previewer.getActiveSkinType(), session));
-                    }
+                    uploader.uploadSkin(StatusBanner.HD_SKINS_REQUEST, SkinUpload.delete(previewer.getActiveSkinType(), session));
                 });
             })
             .styled(s -> s
@@ -254,9 +254,9 @@ public class GuiSkins extends GameGui {
                 .getBounds();
 
         addButton(new Button(area.left - 25, area.top, 20, 20))
-                .onUpdate(sender -> sender.setEnabled(uploader.getFeatures().contains(Feature.DOWNLOAD_USER_SKIN) && uploader.canClear(previewer.getActiveSkinType()) && !chooser.pickingInProgress()))
+                .onUpdate(sender -> sender.setEnabled(uploader.getFeatures().contains(Feature.DOWNLOAD_USER_SKIN) && uploader.hasUploaded(previewer.getActiveSkinType()) && !chooser.pickingInProgress()))
                 .onClick(sender -> {
-                    if (uploader.canClear(previewer.getActiveSkinType())) {
+                    if (uploader.hasUploaded(previewer.getActiveSkinType())) {
                         chooser.openSavePNG(uploader, I18n.translate("hdskins.save.title"), client.getSession().getUsername());
                     }
                 })
@@ -276,9 +276,8 @@ public class GuiSkins extends GameGui {
     }
 
     @Override
-    public void close() {
-        super.close();
-
+    public void removed() {
+        dropper.cancel();
         try {
             uploader.close();
         } catch (IOException e) {
@@ -289,13 +288,9 @@ public class GuiSkins extends GameGui {
     }
 
     @Override
-    public void removed() {
-        dropper.cancel();
-    }
-
-    @Override
     public void onDisplayed() {
         dropper.subscribe();
+        uploader.scheduleReload();
     }
 
     protected boolean canTakeEvents() {

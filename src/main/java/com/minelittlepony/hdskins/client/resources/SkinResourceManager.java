@@ -11,9 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.jetbrains.annotations.Nullable;
@@ -21,13 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.base.Suppliers;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
+import com.minelittlepony.hdskins.client.HDSkins;
+import com.minelittlepony.hdskins.client.Memoize;
 import com.minelittlepony.hdskins.client.profile.DynamicSkinTextures;
 import com.minelittlepony.hdskins.client.resources.SkinResourceManager.SkinData.Skin;
 import com.minelittlepony.hdskins.profile.SkinType;
@@ -53,26 +50,23 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
 
     private static final Identifier ID = new Identifier("hdskins", "skins");
 
-    private static final Logger logger = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 
-    private static final Gson gson = new GsonBuilder()
+    private static final Gson GSON = new GsonBuilder()
             .registerTypeHierarchyAdapter(SkinType.class, SkinType.adapter())
             .create();
 
     private final TextureLoader loader = new TextureLoader("hd_skins", HDPlayerSkinTexture::filterPlayerSkins);
 
     private final Map<SkinType, SkinStore> store = new HashMap<>();
+    private long lastLoadTime;
 
-    private final LoadingCache<Identifier, CompletableFuture<Identifier>> textures = CacheBuilder.newBuilder()
-            .expireAfterAccess(15, TimeUnit.MINUTES)
-            .build(CacheLoader.from(loader::loadAsync));
+    private final LoadingCache<Identifier, CompletableFuture<Identifier>> textures = Memoize.createAsyncLoadingCache(15, loader::loadAsync);
 
     @Override
     public CompletableFuture<Void> reload(Synchronizer sync, ResourceManager sender,
             Profiler serverProfiler, Profiler clientProfiler,
             Executor serverExecutor, Executor clientExecutor) {
-
-        sync.getClass();
         return sync.whenPrepared(null).thenRunAsync(() -> {
             clientProfiler.startTick();
             clientProfiler.push("Reloading User's HD Skins");
@@ -96,6 +90,7 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
 
             clientProfiler.pop();
             clientProfiler.endTick();
+            lastLoadTime = System.currentTimeMillis();
         }, clientExecutor);
     }
 
@@ -106,16 +101,16 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
 
     private Optional<SkinData> loadSkinData(Resource res) {
         try (var reader = new InputStreamReader(res.getInputStream())) {
-            return Optional.ofNullable(gson.fromJson(reader, SkinData.class));
+            return Optional.ofNullable(GSON.fromJson(reader, SkinData.class));
         } catch (JsonParseException e) {
-            logger.warn("Invalid skins.json in " + res.getResourcePackName(), e);
         } catch (IOException ignored) {}
 
         return Optional.empty();
     }
 
-    public Supplier<DynamicSkinTextures> getSkinTextures(GameProfile profile) {
-        return Suppliers.memoize(() -> new DynamicSkinTextures() {
+    public DynamicSkinTextures getSkinTextures(GameProfile profile) {
+        return new DynamicSkinTextures() {
+            private long initTime = System.currentTimeMillis();
             @Override
             public Set<Identifier> getProvidedSkinTypes() {
                 return Set.of();
@@ -130,7 +125,16 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
             public String getModel(String fallback) {
                 return getCustomPlayerModel(profile).orElse(fallback);
             }
-        })::get;
+
+            @Override
+            public boolean hasChanged() {
+                if (initTime < lastLoadTime) {
+                    initTime = System.currentTimeMillis();
+                    return true;
+                }
+                return false;
+            }
+        };
     }
 
     /**
@@ -257,7 +261,7 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
                     return new Identifier(skin);
                 }
 
-                return new Identifier("hdskins", String.format("textures/skins/%s.png", skin));
+                return HDSkins.id(String.format("textures/skins/%s.png", skin));
             }
 
             @Nullable

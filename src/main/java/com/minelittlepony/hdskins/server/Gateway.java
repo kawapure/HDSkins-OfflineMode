@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Throwables;
 import com.google.common.cache.*;
+import com.minelittlepony.hdskins.client.Memoize;
 import com.minelittlepony.hdskins.client.gui.SkinUploader;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinServer.SkinServerProfile;
@@ -26,9 +27,7 @@ public class Gateway {
 
     private final SkinServer server;
 
-    private final LoadingCache<GameProfile, CompletableFuture<Optional<SkinServer.SkinServerProfile<?>>>> profiles = CacheBuilder.newBuilder()
-            .expireAfterAccess(15, TimeUnit.SECONDS)
-            .build(CacheLoader.from(this::loadUncachedProfile));
+    private final LoadingCache<GameProfile, CompletableFuture<Optional<SkinServer.SkinServerProfile<?>>>> profiles = Memoize.createAsyncLoadingCache(15, this::loadUncachedProfile);
 
     private boolean offline;
     private boolean throttled;

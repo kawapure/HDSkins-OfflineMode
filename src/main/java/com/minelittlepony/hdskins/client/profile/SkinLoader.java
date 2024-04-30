@@ -6,14 +6,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.minelittlepony.hdskins.client.HDSkins;
+import com.minelittlepony.hdskins.client.Memoize;
 import com.minelittlepony.hdskins.client.SkinCacheClearCallback;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.Feature;
@@ -27,26 +25,43 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 
 public class SkinLoader {
-    private final LoadingCache<GameProfile, CompletableFuture<ProvidedSkins>> cache = CacheBuilder.newBuilder()
-            .expireAfterAccess(15, TimeUnit.SECONDS)
-            .build(CacheLoader.from(profile -> {
-                if (profile.getId() == null) {
-                    return CompletableFuture.completedFuture(ProvidedSkins.EMPTY);
-                }
+    private final LoadingCache<GameProfile, CompletableFuture<ProvidedSkins>> cache = Memoize.createAsyncLoadingCache(15, profile -> {
+        if (profile.getId() == null) {
+            return CompletableFuture.completedFuture(ProvidedSkins.EMPTY);
+        }
 
-                return CompletableFuture
-                        .supplyAsync(() -> loadProfileTextures(profile), Util.getMainWorkerExecutor())
-                        .thenComposeAsync(this::fetchTextures, MinecraftClient.getInstance());
-            }));
+        return CompletableFuture
+                .supplyAsync(() -> loadProfileTextures(profile), Util.getMainWorkerExecutor())
+                .thenComposeAsync(this::fetchTextures, MinecraftClient.getInstance());
+    });
 
     private final FileStore fileStore = new FileStore();
 
-    public Supplier<ProvidedSkins> get(GameProfile profile) {
-        return () -> getNow(profile);
-    }
+    public DynamicSkinTextures get(GameProfile profile) {
+        return new DynamicSkinTextures() {
+            private final AtomicReference<ProvidedSkins> value = new AtomicReference<>(load(profile).getNow(ProvidedSkins.EMPTY));
 
-    public ProvidedSkins getNow(GameProfile profile) {
-        return load(profile).getNow(ProvidedSkins.EMPTY);
+            @Override
+            public Set<Identifier> getProvidedSkinTypes() {
+                return value.get().getProvidedSkinTypes();
+            }
+
+            @Override
+            public Optional<Identifier> getSkin(SkinType type) {
+                return value.get().getSkin(type);
+            }
+
+            @Override
+            public String getModel(String fallback) {
+                return value.get().getModel(fallback);
+            }
+
+            @Override
+            public boolean hasChanged() {
+                final ProvidedSkins value = load(profile).getNow(ProvidedSkins.EMPTY);
+                return this.value.getAndSet(value) != value;
+            }
+        };
     }
 
     public CompletableFuture<ProvidedSkins> load(GameProfile profile) {
@@ -124,6 +139,11 @@ public class SkinLoader {
         @Override
         public String getModel(String fallback) {
             return model.orElse(fallback);
+        }
+
+        @Override
+        public boolean hasChanged() {
+            return false;
         }
     }
 }
