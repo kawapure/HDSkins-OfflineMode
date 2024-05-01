@@ -8,6 +8,8 @@ import com.mojang.authlib.minecraft.MinecraftSessionService;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface SkinServer {
     /**
@@ -33,7 +35,7 @@ public interface SkinServer {
      *
      * @throws IOException
      * @throws AuthenticationException
-     * @see MinecraftSessionService.joinServer
+     * @see MinecraftSessionService#joinServer
      */
     void authorize(Session session) throws IOException, AuthenticationException;
 
@@ -56,6 +58,19 @@ public interface SkinServer {
      * @throws IOException If any authentication or network error occurs.
      */
     TexturePayload loadSkins(GameProfile profile) throws IOException, AuthenticationException;
+
+    default List<TexturePayload> loadSkins(Collection<GameProfile> profiles) throws IOException {
+        return profiles.parallelStream()
+                .flatMap((profile) -> {
+                    try {
+                        return Stream.of(loadSkins(profile));
+                    } catch (IOException | AuthenticationException e) {
+                        // ignore
+                        return Stream.empty();
+                    }
+                })
+                .collect(Collectors.toList());
+    }
 
     /**
      * Uploads a player's skin to this server.

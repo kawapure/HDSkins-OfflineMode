@@ -14,9 +14,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @ServerType("valhalla")
 public class ValhallaSkinServer implements SkinServer {
@@ -80,6 +78,18 @@ public class ValhallaSkinServer implements SkinServer {
     }
 
     @Override
+    public List<TexturePayload> loadSkins(Collection<GameProfile> profiles) throws IOException {
+        var data = new BulkTextures(profiles.stream().map(GameProfile::getId).toList());
+        return MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("bulk_textures"))
+                        .POST(FileTypes.json(data))
+                        .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.APPLICATION_JSON)
+                        .build())
+                .requireOk()
+                .json(BulkTexturesResponse.class, "Invalid texture payload")
+                .users;
+    }
+
+    @Override
     public TexturePayload loadSkins(Session session) throws IOException, AuthenticationException {
         authorize(session);
         return doAuthorizedRequest(session, (accessToken) -> new TexturePayload(
@@ -124,7 +134,6 @@ public class ValhallaSkinServer implements SkinServer {
                     .requireOk();
         });
     }
-
 
     @Override
     public void authorize(Session session) throws IOException, AuthenticationException {
@@ -206,14 +215,9 @@ public class ValhallaSkinServer implements SkinServer {
                 .toString();
     }
 
-    private static class AuthHandshake {
-        boolean offline;
-        String serverId;
-        long verifyToken;
-    }
+    private record AuthHandshake(boolean offline, String serverId, long verifyToken) {}
+    private record AuthResponse(String accessToken, UUID userId) {}
 
-    private static class AuthResponse {
-        String accessToken;
-        UUID userId;
-    }
+    private record BulkTextures(List<UUID> uuids) {}
+    private record BulkTexturesResponse(List<TexturePayload> users) {}
 }
