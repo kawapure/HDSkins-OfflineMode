@@ -40,7 +40,7 @@ public class HttpException extends IOException {
     }
 
     static String getMessage(JsonObject json) {
-        return MESSAGE_FIELDS.stream().filter(json::has).map(json::get).findFirst().orElse(json).getAsString();
+        return MESSAGE_FIELDS.stream().filter(json::has).map(json::get).findFirst().orElse(json).toString();
     }
 
     interface UnsafeSupplier<T> {
