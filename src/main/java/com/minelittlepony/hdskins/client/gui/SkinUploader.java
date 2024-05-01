@@ -240,7 +240,7 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
         pendingRefresh = false;
         gateway.ifPresent(gateway -> {
             gateway
-                .fetchSkins(previewer.getProfile(), session, this::setBannerMessage)
+                .fetchSkins(session, this::setBannerMessage)
                 .thenAcceptAsync(textures -> {
                     ServerPlayerSkins skins = previewer.getRemote().getSkins();
                     skins.loadTextures(textures, loadListener);

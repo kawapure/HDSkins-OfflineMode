@@ -4,6 +4,7 @@ import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinUpload.Session;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
+import com.mojang.authlib.minecraft.MinecraftSessionService;
 
 import java.io.IOException;
 import java.util.*;
@@ -35,6 +36,18 @@ public interface SkinServer {
      * @see MinecraftSessionService.joinServer
      */
     void authorize(Session session) throws IOException, AuthenticationException;
+
+    /**
+     * Loads texture information for the current user.
+     *
+     * @param session The current user's session
+     * @return The current user's texture info
+     * @throws IOException             If any network errors occur
+     * @throws AuthenticationException If there are issues with authentication
+     */
+    default TexturePayload loadSkins(Session session) throws IOException, AuthenticationException {
+        return loadSkins(session.profile());
+    }
 
     /**
      * Loads texture information for the provided profile.
