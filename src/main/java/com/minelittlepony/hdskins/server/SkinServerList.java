@@ -3,29 +3,30 @@ package com.minelittlepony.hdskins.server;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.gson.*;
-import com.minelittlepony.hdskins.client.HDSkins;
+import com.minelittlepony.hdskins.HDSkinsServer;
 import com.minelittlepony.hdskins.profile.ProfileUtils;
 import com.minelittlepony.hdskins.profile.SkinType;
+import com.minelittlepony.hdskins.util.ResourceUtil;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.SynchronousResourceReloader;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -33,11 +34,11 @@ import java.util.stream.Stream;
 
 public class SkinServerList implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
 
-    private static final Identifier SKIN_SERVERS = new Identifier(HDSkins.MOD_ID, "skins/servers.json");
+    private static final Identifier SKIN_SERVERS = HDSkinsServer.id("skins/servers.json");
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(SkinServer.class, SkinServerSerializer.instance)
+            .registerTypeAdapter(SkinServer.class, SkinServerSerializer.INSTANCE)
             .create();
 
     private List<Gateway> skinServers = new LinkedList<>();
@@ -51,22 +52,19 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
 
     @Override
     public void reload(ResourceManager mgr) {
-        skinServers.clear();
-
         LOGGER.info("Loading skin servers");
-        for (Resource res : mgr.getAllResources(SKIN_SERVERS)) {
+        skinServers = ImmutableList.copyOf(ResourceUtil.streamAllResources(mgr, ResourceType.SERVER_DATA, SKIN_SERVERS).map(res -> {
             LOGGER.info("Found {} in {}", SKIN_SERVERS, res.getPackId());
-            try (var reader = new InputStreamReader(res.getInputStream())) {
-                SkinServerJson json = GSON.fromJson(reader, SkinServerJson.class);
-                json.apply(skinServers);
+            try (var reader = res.getReader()) {
+                return GSON.fromJson(reader, SkinServerJson.class);
             } catch (IOException | JsonParseException e) {
                 LOGGER.warn("Unable to load resource '{}' from '{}'", SKIN_SERVERS, res.getPackId(), e);
             }
-        }
-    }
-
-    public List<Gateway> getSkinServers() {
-        return ImmutableList.copyOf(skinServers);
+            return null;
+        }).filter(Objects::nonNull).reduce(new LinkedList<Gateway>(), (gateways, res) -> {
+            res.apply(gateways);
+            return gateways;
+        }, (a, b) -> b));
     }
 
     public Map<SkinType, MinecraftProfileTexture> fillProfile(GameProfile profile) {
@@ -80,7 +78,7 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
 
             Map<SkinType, MinecraftProfileTexture> textureMap = new HashMap<>();
 
-            for (Gateway gateway : getSkinServers()) {
+            for (Gateway gateway : skinServers) {
                 try {
                     if (!gateway.getServer().getFeatures().contains(Feature.SYNTHETIC)) {
                         gateway.getServer().loadSkins(profile).getTextures().forEach((type, texture) -> {
@@ -94,7 +92,7 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
                         }
                     }
                 } catch (IOException | AuthenticationException e) {
-                    HDSkins.LOGGER.trace(e);
+                    LOGGER.trace(e);
                 }
             }
 
@@ -125,7 +123,7 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
     }
 
     public Iterator<Gateway> getCycler() {
-        return Iterators.cycle(getSkinServers());
+        return Iterators.cycle(skinServers);
     }
 
     private static <T> void addAllStart(List<T> list, List<T> toAdd) {

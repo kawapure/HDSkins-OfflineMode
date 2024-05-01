@@ -33,8 +33,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class EquipmentList extends JsonDataLoader implements IdentifiableResourceReloadListener {
 
-    private static final Identifier EQUIPMENT = new Identifier(HDSkins.MOD_ID, "skins/equipment");
-    private static final Identifier EMPTY = new Identifier(HDSkins.MOD_ID, "empty");
+    private static final Identifier EQUIPMENT = HDSkins.id("skins/equipment");
+    private static final Identifier EMPTY = HDSkins.id("empty");
 
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Identifier.class, new ToStringAdapter<>(Identifier::new))

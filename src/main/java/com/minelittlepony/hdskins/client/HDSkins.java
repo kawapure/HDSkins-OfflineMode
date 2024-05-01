@@ -25,8 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public final class HDSkins implements ClientModInitializer {
-    public static final String MOD_ID = "hdskins";
-
     public static final Logger LOGGER = LogManager.getLogger();
 
     private static HDSkins instance;
@@ -36,7 +34,7 @@ public final class HDSkins implements ClientModInitializer {
     }
 
     public static Identifier id(String name) {
-        return new Identifier(MOD_ID, name);
+        return HDSkinsServer.id(name);
     }
 
     private final HDConfig config = new HDConfig(GamePaths.getConfigDirectory().resolve("hdskins.json"));
@@ -58,6 +56,7 @@ public final class HDSkins implements ClientModInitializer {
     public void onInitializeClient() {
         config.load();
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(resources);
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(HDSkinsServer.getInstance().getServers());
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(equipmentList);
         ScreenInitCallback.EVENT.register(this::onScreenInit);
 

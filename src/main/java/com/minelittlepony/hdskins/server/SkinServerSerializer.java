@@ -16,8 +16,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 public class SkinServerSerializer implements JsonSerializer<SkinServer>, JsonDeserializer<SkinServer> {
-
-    public static final SkinServerSerializer instance = new SkinServerSerializer();
+    public static final SkinServerSerializer INSTANCE = new SkinServerSerializer();
 
     private final BiMap<String, Class<? extends SkinServer>> types = HashBiMap.create(2);
 
