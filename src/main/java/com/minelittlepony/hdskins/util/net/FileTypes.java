@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Flow.Subscriber;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.FilenameUtils;
 
 import com.google.common.base.Strings;
@@ -121,5 +122,13 @@ public interface FileTypes {
                 }
             };
         }
+    }
+
+    static BodyPublisher json(Object object) {
+        return json(object, new Gson());
+    }
+
+    static BodyPublisher json(Object object, Gson gson) {
+        return BodyPublishers.ofString(gson.toJson(object), StandardCharsets.UTF_8);
     }
 }

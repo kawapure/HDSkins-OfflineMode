@@ -4,9 +4,12 @@ import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinUpload.Session;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
+import com.mojang.authlib.minecraft.MinecraftSessionService;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface SkinServer {
     /**
@@ -32,9 +35,21 @@ public interface SkinServer {
      *
      * @throws IOException
      * @throws AuthenticationException
-     * @see MinecraftSessionService.joinServer
+     * @see MinecraftSessionService#joinServer
      */
     void authorize(Session session) throws IOException, AuthenticationException;
+
+    /**
+     * Loads texture information for the current user.
+     *
+     * @param session The current user's session
+     * @return The current user's texture info
+     * @throws IOException             If any network errors occur
+     * @throws AuthenticationException If there are issues with authentication
+     */
+    default TexturePayload loadSkins(Session session) throws IOException, AuthenticationException {
+        return loadSkins(session.profile());
+    }
 
     /**
      * Loads texture information for the provided profile.
@@ -43,6 +58,19 @@ public interface SkinServer {
      * @throws IOException If any authentication or network error occurs.
      */
     TexturePayload loadSkins(GameProfile profile) throws IOException, AuthenticationException;
+
+    default List<TexturePayload> loadSkins(Collection<GameProfile> profiles) throws IOException {
+        return profiles.parallelStream()
+                .flatMap((profile) -> {
+                    try {
+                        return Stream.of(loadSkins(profile));
+                    } catch (IOException | AuthenticationException e) {
+                        // ignore
+                        return Stream.empty();
+                    }
+                })
+                .collect(Collectors.toList());
+    }
 
     /**
      * Uploads a player's skin to this server.

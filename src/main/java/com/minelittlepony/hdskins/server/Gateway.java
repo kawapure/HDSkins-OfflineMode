@@ -115,19 +115,11 @@ public class Gateway {
         });
     }
 
-    public CompletableFuture<TexturePayload> fetchSkins(GameProfile profile, Session session, Consumer<Text> errorCallback) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                server.authorize(session);
-            } catch (Throwable e) {
-                handleException(e, t -> {});
-            }
-        });
-
+    public CompletableFuture<TexturePayload> fetchSkins(Session session, Consumer<Text> errorCallback) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 setBusy(true);
-                return server.loadSkins(profile);
+                return server.loadSkins(session);
             } catch (Exception e) {
                 handleException(e, errorCallback);
                 throw new RuntimeException(e);

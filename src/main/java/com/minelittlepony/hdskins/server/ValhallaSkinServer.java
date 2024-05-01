@@ -1,20 +1,20 @@
 package com.minelittlepony.hdskins.server;
 
 import com.google.common.collect.Sets;
+import com.google.gson.reflect.TypeToken;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinUpload.Session;
 import com.minelittlepony.hdskins.util.IndentedToStringStyle;
 import com.minelittlepony.hdskins.util.net.*;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
-import com.mojang.util.UndashedUuid;
+import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @ServerType("valhalla")
 public class ValhallaSkinServer implements SkinServer {
@@ -29,12 +29,23 @@ public class ValhallaSkinServer implements SkinServer {
             Feature.MODEL_TYPES
     );
 
+    private static final TypeToken<Map<SkinType, MinecraftProfileTexture>> TEXTURE_MAP_TYPE = new TypeToken<>() {
+    };
+
     private final String address;
 
     private transient String accessToken;
 
     public ValhallaSkinServer(String address) {
         this.address = address;
+    }
+
+    private URI buildBackendUri(String path) {
+        return URI.create(String.format("%s%s/%s", address, API_PREFIX, path));
+    }
+
+    private URI buildBackendUserUri(UUID uuid) {
+        return buildBackendUri(String.format("user/%s", uuid.toString()));
     }
 
     @Override
@@ -59,13 +70,10 @@ public class ValhallaSkinServer implements SkinServer {
         return false;
     }
 
-    private String getApiPrefix() {
-        return address + API_PREFIX;
-    }
-
     @Override
-    public TexturePayload loadSkins(GameProfile profile) throws IOException, AuthenticationException {
-        return MoreHttpResponses.execute(HttpRequest.newBuilder(URI.create(String.format("%s/user/%s", getApiPrefix(), UndashedUuid.toString(profile.getId()))))
+    public TexturePayload loadSkins(GameProfile profile) throws IOException {
+        var path = buildBackendUserUri(profile.getId());
+        return MoreHttpResponses.execute(HttpRequest.newBuilder(path)
                     .GET()
                     .build())
                 .requireOk()
@@ -73,38 +81,43 @@ public class ValhallaSkinServer implements SkinServer {
     }
 
     @Override
-    public void uploadSkin(SkinUpload upload) throws IOException, AuthenticationException {
-        try {
-            uploadPlayerSkin(upload);
-        } catch (HttpException e) {
-            if (e.getStatusCode() != 401) {
-                throw e;
-            }
-
-            accessToken = null;
-            uploadPlayerSkin(upload);
-        } catch (IOException e) {
-            if (e.getMessage().equals("Authorization failed")) {
-                accessToken = null;
-                uploadPlayerSkin(upload);
-            }
-
-            throw e;
-        }
+    public List<TexturePayload> loadSkins(Collection<GameProfile> profiles) throws IOException {
+        var data = new BulkTextures(profiles.stream().map(GameProfile::getId).toList());
+        return MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("bulk_textures"))
+                        .POST(FileTypes.json(data))
+                        .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.APPLICATION_JSON)
+                        .build())
+                .requireOk()
+                .json(BulkTexturesResponse.class, "Invalid texture payload")
+                .users;
     }
 
-    private void uploadPlayerSkin(SkinUpload upload) throws IOException, AuthenticationException {
-        authorize(upload.session());
+    @Override
+    public TexturePayload loadSkins(Session session) throws IOException, AuthenticationException {
+        authorize(session);
+        return doAuthorizedRequest(session, (accessToken) -> new TexturePayload(
+                session.profile(),
+                MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("textures"))
+                        .GET()
+                        .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
+                        .build())
+                    .requireOk()
+                    .json(TEXTURE_MAP_TYPE.getType(), "Invalid texture payload")
+        ));
+    }
 
-        if (upload instanceof SkinUpload.Delete) {
-            MoreHttpResponses.execute(HttpRequest.newBuilder(buildUserTextureUri(upload))
+    @Override
+    public void uploadSkin(SkinUpload upload) throws IOException, AuthenticationException {
+        doAuthorizedRequest(upload.session(), (accessToken) -> switch (upload) {
+            case SkinUpload.Delete ignored -> MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("texture"))
                             .DELETE()
                             .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
                             .build())
                     .requireOk();
-        } else if (upload instanceof SkinUpload.FileUpload fileUpload) {
-            MoreHttpResponses.execute(HttpRequest.newBuilder(buildUserTextureUri(upload))
+            case SkinUpload.FileUpload fileUpload ->
+                    MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("textures"))
                             .PUT(FileTypes.multiPart(fileUpload.metadata())
+                                    .field("type", fileUpload.type())
                                     .field("file", fileUpload.file())
                                     .build())
                             .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.MULTI_PART_FORM_DATA)
@@ -112,9 +125,9 @@ public class ValhallaSkinServer implements SkinServer {
                             .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
                             .build())
                     .requireOk();
-        } else if (upload instanceof SkinUpload.UriUpload uriUpload) {
-            MoreHttpResponses.execute(HttpRequest.newBuilder(buildUserTextureUri(upload))
+            case SkinUpload.UriUpload uriUpload -> MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("textures"))
                             .POST(FileTypes.multiPart(uriUpload.metadata())
+                                    .field("type", uriUpload.type())
                                     .field("file", uriUpload.uri().toString())
                                     .build())
                             .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.MULTI_PART_FORM_DATA)
@@ -122,16 +135,7 @@ public class ValhallaSkinServer implements SkinServer {
                             .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
                             .build())
                     .requireOk();
-        } else {
-            throw new IllegalArgumentException("Unsupported Upload type: " + upload.getClass().getName());
-        }
-    }
-
-    private URI buildUserTextureUri(SkinUpload upload) {
-        return URI.create(String.format("%s/user/%s/%s", getApiPrefix(),
-                UndashedUuid.toString(upload.session().profile().getId()),
-                upload.type().getParameterizedName()
-        ));
+        });
     }
 
     @Override
@@ -155,8 +159,35 @@ public class ValhallaSkinServer implements SkinServer {
         accessToken = response.accessToken;
     }
 
+    private interface AuthorizedRequest<T> {
+        T doRequest(String accessToken) throws IOException, AuthenticationException;
+    }
+
+    private <T> T doAuthorizedRequest(Session session, AuthorizedRequest<T> requester) throws IOException, AuthenticationException {
+        authorize(session);
+        try {
+            return requester.doRequest(accessToken);
+        } catch (HttpException e) {
+            if (e.getStatusCode() != 401) {
+                throw e;
+            }
+
+            accessToken = null;
+            authorize(session);
+            return requester.doRequest(accessToken);
+        } catch (IOException e) {
+            if (e.getMessage().equals("Authorization failed")) {
+                accessToken = null;
+                authorize(session);
+                return requester.doRequest(accessToken);
+            }
+
+            throw e;
+        }
+    }
+
     private AuthHandshake authHandshake(String name) throws IOException {
-        return MoreHttpResponses.execute(HttpRequest.newBuilder(URI.create(String.format("%s/auth/handshake", getApiPrefix())))
+        return MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("auth/minecraft"))
                 .POST(FileTypes.multiPart()
                         .field("name", name)
                         .build())
@@ -168,7 +199,7 @@ public class ValhallaSkinServer implements SkinServer {
     }
 
     private AuthResponse authResponse(String name, long verifyToken) throws IOException {
-        return MoreHttpResponses.execute(HttpRequest.newBuilder(URI.create(String.format("%s/auth/response", getApiPrefix())))
+        return MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("auth/minecraft/callback"))
                 .POST(FileTypes.multiPart()
                         .field("name", name)
                         .field("verifyToken", verifyToken)
@@ -187,14 +218,9 @@ public class ValhallaSkinServer implements SkinServer {
                 .toString();
     }
 
-    private static class AuthHandshake {
-        private boolean offline;
-        private String serverId;
-        private long verifyToken;
-    }
+    private record AuthHandshake(boolean offline, String serverId, long verifyToken) {}
+    private record AuthResponse(String accessToken, UUID userId) {}
 
-    private static class AuthResponse {
-        private String accessToken;
-        private UUID userId;
-    }
+    private record BulkTextures(List<UUID> uuids) {}
+    private record BulkTexturesResponse(List<TexturePayload> users) {}
 }

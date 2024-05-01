@@ -56,6 +56,8 @@ dependencies {
     include "com.minelittlepony:kirin:${project.kirin_version}"
 
     modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modImplementation fabricApi.module("fabric-api", project.fabric_version)
+    modImplementation "com.ptsmods:devlogin:3.4.1"
 }
 
 processResources {
