@@ -46,12 +46,13 @@ public class ConfirmationScreen extends GameGui {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float partialTicks) {
-
         parent.render(context, -1, -1, partialTicks);
         context.getMatrices().push();
         context.getMatrices().translate(0, 0, 300);
 
         context.fill(0, 0, width, height, 0xC8000000);
+
+        super.render(context, mouseX, mouseY, partialTicks);
 
         int left = width / 2;
         int top = height / 2 - (message.size() * getFont().fontHeight);
@@ -59,7 +60,6 @@ public class ConfirmationScreen extends GameGui {
             drawCenteredLabel(context, line, left, top += getFont().fontHeight, 0xFFFFFFFF, 0);
         }
 
-        super.render(context, mouseX, mouseY, partialTicks);
         context.getMatrices().pop();
     }
 
