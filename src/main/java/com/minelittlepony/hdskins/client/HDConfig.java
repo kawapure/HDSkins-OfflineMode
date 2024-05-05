@@ -14,6 +14,10 @@ public class HDConfig extends Config {
     public final Setting<Boolean> disablePantsButton = value("gui", "disablePantsButton", false)
             .addComment("When enabled, will hide the pants button from the main menu. You will need to use Mod Menu or the in-game shortcut to access the skin uploading gui if you turn this one");
 
+
+    public final Setting<Boolean> useBatchLoading = value("experiments", "useBatchLoading", false)
+            .addComment("When enabled, player skins will be requested from the server in batches (experimental)");
+
     public HDConfig(Path path) {
         super(HEIRARCHICAL_JSON_ADAPTER, path);
     }
