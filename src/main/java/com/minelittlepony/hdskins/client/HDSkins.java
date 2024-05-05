@@ -55,6 +55,7 @@ public final class HDSkins implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         config.load();
+        HDSkinsServer.getInstance().setSessionService(MinecraftClient.getInstance()::getSessionService);
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(resources);
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(HDSkinsServer.getInstance().getServers());
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(equipmentList);

@@ -1,11 +1,19 @@
 package com.minelittlepony.hdskins;
 
+import java.util.Objects;
+import java.util.function.Supplier;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.minelittlepony.hdskins.server.SkinServerList;
+import com.mojang.authlib.minecraft.MinecraftSessionService;
+
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 
@@ -15,6 +23,8 @@ public class HDSkinsServer implements ModInitializer {
     public static final Logger LOGGER = LogManager.getLogger();
 
     private static HDSkinsServer instance;
+
+    private Supplier<MinecraftSessionService> sessionServiceSupplier = () -> null;
 
     public static HDSkinsServer getInstance() {
         if (instance == null) {
@@ -37,8 +47,21 @@ public class HDSkinsServer implements ModInitializer {
         return servers;
     }
 
+    public void setSessionService(Supplier<MinecraftSessionService> serviceSupplier) {
+        sessionServiceSupplier = serviceSupplier;
+    }
+
+    public MinecraftSessionService getSessionService() {
+        return Objects.requireNonNull(sessionServiceSupplier.get(), "getSessionService called too early");
+    }
+
     @Override
     public void onInitialize() {
         ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(servers);
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
+            ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+                setSessionService(server::getSessionService);
+            });
+        }
     }
 }

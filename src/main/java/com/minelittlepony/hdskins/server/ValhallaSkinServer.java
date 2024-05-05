@@ -29,8 +29,7 @@ public class ValhallaSkinServer implements SkinServer {
             Feature.MODEL_TYPES
     );
 
-    private static final TypeToken<Map<SkinType, MinecraftProfileTexture>> TEXTURE_MAP_TYPE = new TypeToken<>() {
-    };
+    private static final TypeToken<Map<SkinType, MinecraftProfileTexture>> TEXTURE_MAP_TYPE = new TypeToken<>() {};
 
     private final String address;
 

@@ -7,6 +7,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.util.*;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonObject;
+import com.minelittlepony.hdskins.HDSkinsServer;
 import com.minelittlepony.hdskins.profile.ProfileUtils;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinUpload.Session;
@@ -59,10 +60,9 @@ public class YggdrasilSkinServer implements SkinServer {
 
     @Override
     public TexturePayload loadSkins(GameProfile profile) throws IOException, AuthenticationException {
-        MinecraftClient client = MinecraftClient.getInstance();
-        MinecraftSessionService session = client.getSessionService();
+        MinecraftSessionService service = HDSkinsServer.getInstance().getSessionService();
 
-        ProfileResult result = session.fetchProfile(profile.getId(), requireSecure);
+        ProfileResult result = service.fetchProfile(profile.getId(), requireSecure);
 
         if (result == null) {
             throw new AuthenticationException("Mojang API error occured. You may be throttled.");
@@ -70,7 +70,7 @@ public class YggdrasilSkinServer implements SkinServer {
 
         try {
             profile = result.profile();
-            return new TexturePayload(profile, ProfileUtils.readVanillaTexturesBlob(profile).findFirst().orElseGet(HashMap::new));
+            return new TexturePayload(profile, ProfileUtils.readVanillaTexturesBlob(service, profile).findFirst().orElseGet(HashMap::new));
         } catch (InsecurePublicKeyException e) {
             throw new AuthenticationException(e);
         }
