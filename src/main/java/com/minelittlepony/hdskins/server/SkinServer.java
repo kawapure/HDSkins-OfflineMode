@@ -8,7 +8,6 @@ import com.mojang.authlib.minecraft.MinecraftSessionService;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface SkinServer {
@@ -60,16 +59,14 @@ public interface SkinServer {
     TexturePayload loadSkins(GameProfile profile) throws IOException, AuthenticationException;
 
     default List<TexturePayload> loadSkins(Collection<GameProfile> profiles) throws IOException {
-        return profiles.parallelStream()
-                .flatMap((profile) -> {
-                    try {
-                        return Stream.of(loadSkins(profile));
-                    } catch (IOException | AuthenticationException e) {
-                        // ignore
-                        return Stream.empty();
-                    }
-                })
-                .collect(Collectors.toList());
+        return profiles.parallelStream().flatMap((profile) -> {
+            try {
+                return Stream.of(loadSkins(profile));
+            } catch (IOException | AuthenticationException e) {
+                // ignore
+                return Stream.empty();
+            }
+        }).toList();
     }
 
     /**

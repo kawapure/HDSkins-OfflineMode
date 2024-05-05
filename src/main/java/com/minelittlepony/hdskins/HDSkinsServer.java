@@ -1,12 +1,17 @@
 package com.minelittlepony.hdskins;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinServerList;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 
 import net.fabricmc.api.EnvType;
@@ -24,8 +29,6 @@ public class HDSkinsServer implements ModInitializer {
 
     private static HDSkinsServer instance;
 
-    private Supplier<MinecraftSessionService> sessionServiceSupplier = () -> null;
-
     public static HDSkinsServer getInstance() {
         if (instance == null) {
             instance = new HDSkinsServer();
@@ -37,7 +40,11 @@ public class HDSkinsServer implements ModInitializer {
         return new Identifier(DEFAULT_NAMESPACE, name);
     }
 
+    private Supplier<MinecraftSessionService> sessionServiceSupplier = () -> null;
+
     private final SkinServerList servers = new SkinServerList();
+
+    private final BufferedCache<GameProfile, Map<SkinType, MinecraftProfileTexture>> profileLoader = new BufferedCache<>(servers::fillProfiles);
 
     public HDSkinsServer() {
         instance = this;
@@ -45,6 +52,10 @@ public class HDSkinsServer implements ModInitializer {
 
     public SkinServerList getServers() {
         return servers;
+    }
+
+    public CompletableFuture<Map<SkinType, MinecraftProfileTexture>> fillProfile(GameProfile profile) {
+        return profileLoader.apply(profile);
     }
 
     public void setSessionService(Supplier<MinecraftSessionService> serviceSupplier) {

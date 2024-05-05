@@ -8,7 +8,6 @@ import com.minelittlepony.hdskins.profile.ProfileUtils;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.util.ResourceUtil;
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
@@ -20,15 +19,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,38 +70,49 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
         }, (a, b) -> b));
     }
 
-    public Map<SkinType, MinecraftProfileTexture> fillProfile(GameProfile profile) {
-        return getEmbeddedTextures(profile).findFirst().orElseGet(() -> {
-            if (profile.getId() == null) {
-                return Map.of();
-            }
-            Set<SkinType> requestedSkinTypes = SkinType.REGISTRY.stream()
-                    .filter(SkinType::isKnown)
-                    .collect(Collectors.toSet());
+    public Map<GameProfile, Map<SkinType, MinecraftProfileTexture>> fillProfiles(Collection<GameProfile> profiles) {
+        Map<GameProfile, PartialTextures> result = new HashMap<>();
+        List<GameProfile> profileList = profiles.stream().filter(profile -> {
+            return getEmbeddedTextures(profile).findFirst().filter(textures -> {
+                result.put(profile, new PartialTextures(Set.of(), textures));
+                return true;
+            }).isEmpty() && profile.getId() != null;
+        }).collect(Collectors.toList());
+        Map<UUID, GameProfile> profileLookup = profiles.stream().collect(Collectors.toUnmodifiableMap(GameProfile::getId, Function.identity()));
+        Set<SkinType> requestedSkinTypes = SkinType.REGISTRY.stream().filter(SkinType::isKnown).collect(Collectors.toSet());
 
-            Map<SkinType, MinecraftProfileTexture> textureMap = new HashMap<>();
-
-            for (Gateway gateway : skinServers) {
-                try {
-                    if (!gateway.getServer().getFeatures().contains(Feature.SYNTHETIC)) {
-                        gateway.getServer().loadSkins(profile).getTextures().forEach((type, texture) -> {
-                            if (requestedSkinTypes.remove(type)) {
-                                textureMap.putIfAbsent(type, texture);
+        for (Gateway gateway : skinServers) {
+            try {
+                if (!gateway.getServer().getFeatures().contains(Feature.SYNTHETIC)) {
+                    gateway.getServer().loadSkins(profileList).forEach(textures -> {
+                        GameProfile profile = profileLookup.get(textures.getProfileId());
+                        if (profile == null) {
+                            LOGGER.warn("Server {} sent textures for unrequested profile {}. Ignoring.", gateway.toString(), textures.getProfileId());
+                        } else {
+                            if (result.computeIfAbsent(profile,
+                                    p -> new PartialTextures(new HashSet<>(requestedSkinTypes), new HashMap<>()))
+                                    .appendTextures(textures.getTextures())) {
+                                profileList.remove(profile);
+                                writeEmbeddedTextures(profile, result.get(profile).textures());
                             }
-                        });
-
-                        if (requestedSkinTypes.isEmpty()) {
-                            break;
                         }
-                    }
-                } catch (IOException | AuthenticationException e) {
-                    LOGGER.trace(e);
-                }
-            }
+                    });
 
-            writeEmbeddedTextures(profile, textureMap);
-            return textureMap;
-        });
+                    if (profileList.isEmpty()) {
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.trace(e);
+            }
+        }
+
+        return result.entrySet().stream().collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> Map.copyOf(e.getValue().textures())));
+
+    }
+
+    public Map<SkinType, MinecraftProfileTexture> fillProfile(GameProfile profile) {
+        return fillProfiles(Set.of(profile)).getOrDefault(profile, Map.of());
     }
 
     public Stream<Map<SkinType, MinecraftProfileTexture>> getEmbeddedTextures(GameProfile profile) {
@@ -130,6 +144,14 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
         list.addAll(0, toAdd);
     }
 
+    record PartialTextures(Set<SkinType> requestedSkinTypes, Map<SkinType, MinecraftProfileTexture> textures) {
+        boolean appendTextures(Map<SkinType, MinecraftProfileTexture> textures) {
+            textures.forEach(this.textures::putIfAbsent);
+            requestedSkinTypes.removeAll(textures.keySet());
+            return requestedSkinTypes.isEmpty();
+        }
+    }
+
     private static class SkinServerJson {
         boolean overwrite = false;
         InsertType insert = InsertType.END;
@@ -153,6 +175,5 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
         InsertType(BiConsumer<List<Gateway>, List<Gateway>> consumer) {
             this.consumer = consumer;
         }
-
     }
 }
