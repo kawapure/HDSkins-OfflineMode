@@ -1,5 +1,6 @@
 package com.minelittlepony.hdskins.client;
 
+import com.minelittlepony.common.client.gui.VisibilityMode;
 import com.minelittlepony.common.client.gui.element.Button;
 import com.minelittlepony.common.event.ScreenInitCallback;
 import com.minelittlepony.common.util.GamePaths;
@@ -65,17 +66,19 @@ public final class HDSkins implements ClientModInitializer {
     }
 
     private void onScreenInit(Screen screen, ScreenInitCallback.ButtonList buttons) {
-        if (config.disablePantsButton.get()) {
+        if (!(screen instanceof TitleScreen)) {
             return;
         }
-        if (screen instanceof TitleScreen) {
-            Button button = buttons.addButton(new Button(screen.width - 50, screen.height - 50, 20, 20))
-                .onClick(sender -> MinecraftClient.getInstance().setScreen(GuiSkins.create(screen, HDSkinsServer.getInstance().getServers())));
-            button.getStyle()
-                    .setIcon(new ItemStack(Items.LEATHER_LEGGINGS), 0x3c5dcb)
-                    .setTooltip("hdskins.manager", 0, 10);
-            button.setY(screen.height - 50); // ModMenu;
+        VisibilityMode visibility = config.pantsButtonVisibility.get();
+        if (visibility == VisibilityMode.OFF || (visibility == VisibilityMode.AUTO && FabricLoader.getInstance().isModLoaded("modmenu"))) {
+            return;
         }
+        Button button = buttons.addButton(new Button(screen.width - 50, screen.height - 50, 20, 20))
+            .onClick(sender -> MinecraftClient.getInstance().setScreen(GuiSkins.create(screen, HDSkinsServer.getInstance().getServers())));
+        button.getStyle()
+                .setIcon(new ItemStack(Items.LEATHER_LEGGINGS), 0x3c5dcb)
+                .setTooltip("hdskins.manager", 0, 10);
+        button.setY(screen.height - 50); // ModMenu;
     }
 
     public SkinResourceManager getResourceManager() {
