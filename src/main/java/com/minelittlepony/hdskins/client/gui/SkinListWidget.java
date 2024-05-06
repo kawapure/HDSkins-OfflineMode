@@ -205,7 +205,7 @@ public class SkinListWidget implements Carousel.Element {
         GameGui.playSound(SoundEvents.UI_BUTTON_CLICK);
 
         return uploader.getGateway().filter(gateway -> {
-            return gateway.getProfile(previewer.getProfile()).getNow(Optional.empty()).filter(profile -> {
+            return gateway.getProfile(uploader.getSession()).getNow(Optional.empty()).filter(profile -> {
                 SkinType type = previewer.getActiveSkinType();
                 if (index >= 0 && index <= profile.getSkins(type).size()) {
                     gateway.swapSkin(profile, type, index, uploader::setBannerMessage).thenRunAsync(uploader::scheduleReload, client);

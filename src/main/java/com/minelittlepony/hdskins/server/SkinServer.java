@@ -87,13 +87,11 @@ public interface SkinServer {
      * @throws IOException
      * @throws AuthenticationException
      */
-    default Optional<SkinServerProfile<?>> loadProfile(GameProfile profile) throws IOException, AuthenticationException {
+    default Optional<SkinServerProfile<?>> loadProfile(Session session) throws IOException, AuthenticationException {
         return Optional.empty();
     }
 
     interface SkinServerProfile<T extends SkinServerProfile.Skin> {
-        GameProfile getGameProfile();
-
         List<T> getSkins(SkinType type);
 
         void setActive(SkinType type, T texture);

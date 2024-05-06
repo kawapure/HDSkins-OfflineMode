@@ -12,22 +12,22 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.base.Throwables;
 import com.google.common.cache.*;
 import com.minelittlepony.hdskins.Memoize;
-import com.minelittlepony.hdskins.client.gui.SkinUploader;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinServer.SkinServerProfile;
 import com.minelittlepony.hdskins.server.SkinUpload.Session;
 import com.minelittlepony.hdskins.util.net.HttpException;
-import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.*;
 
 import net.minecraft.text.Text;
 
 public class Gateway {
+    public static final Text ERR_SESSION = Text.translatable("hdskins.error.session");
+
     private static final Logger LOGGER = LogManager.getLogger();
 
     private final SkinServer server;
 
-    private final LoadingCache<GameProfile, CompletableFuture<Optional<SkinServer.SkinServerProfile<?>>>> profiles = Memoize.createAsyncLoadingCache(15, this::loadUncachedProfile);
+    private final LoadingCache<Session, CompletableFuture<Optional<SkinServer.SkinServerProfile<?>>>> profiles;
 
     private boolean offline;
     private boolean throttled;
@@ -35,6 +35,15 @@ public class Gateway {
 
     public Gateway(SkinServer server) {
         this.server = server;
+        profiles = Memoize.createAsyncLoadingCache(15, session -> {
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    return server.loadProfile(session);
+                } catch (IOException | AuthenticationException e) {
+                    return Optional.empty();
+                }
+            });
+        });
     }
 
     public boolean isOnline() {
@@ -69,22 +78,8 @@ public class Gateway {
         return SkinType.REGISTRY.stream().filter(server::supportsSkinType).distinct();
     }
 
-    private CompletableFuture<Optional<SkinServer.SkinServerProfile<?>>> loadUncachedProfile(GameProfile profile) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return server.loadProfile(profile);
-            } catch (IOException | AuthenticationException e) {
-                return Optional.empty();
-            }
-        });
-    }
-
-    public CompletableFuture<Optional<SkinServerProfile<?>>> getProfile(GameProfile profile) {
-        return profiles.getUnchecked(profile);
-    }
-
-    public void invalidateProfile(GameProfile profile) {
-        profiles.invalidate(profile);
+    public CompletableFuture<Optional<SkinServerProfile<?>>> getProfile(Session session) {
+        return profiles.getUnchecked(session);
     }
 
     public CompletableFuture<Void> uploadSkin(SkinUpload payload, Consumer<Text> errorCallback) {
@@ -92,7 +87,7 @@ public class Gateway {
             try {
                 setBusy(true);
                 server.uploadSkin(payload);
-                invalidateProfile(payload.session().profile());
+                profiles.invalidateAll();
             } catch (Exception e) {
                 handleException(e, errorCallback);
             } finally {
@@ -106,7 +101,7 @@ public class Gateway {
             try {
                 setBusy(true);
                 profile.setActive(type, profile.getSkins(type).get(index));
-                invalidateProfile(profile.getGameProfile());
+                profiles.invalidateAll();
             } catch (Exception e) {
                 handleException(e, errorCallback);
             } finally {
@@ -134,9 +129,7 @@ public class Gateway {
 
         setBusy(false);
 
-        if (throwable instanceof HttpException) {
-            HttpException ex = (HttpException)throwable;
-
+        if (throwable instanceof HttpException ex) {
             int code = ex.getStatusCode();
 
             if (code >= 500) {
@@ -154,7 +147,7 @@ public class Gateway {
             if (throwable instanceof AuthenticationUnavailableException) {
                 setOffline(true);
             } else if (throwable instanceof InvalidCredentialsException) {
-                errorCallback.accept(SkinUploader.ERR_SESSION);
+                errorCallback.accept(ERR_SESSION);
             } else if (throwable instanceof AuthenticationException) {
                 setThrottled(true);
             } else {

@@ -15,6 +15,8 @@ public interface SkinCallback {
 
     default SkinCallback andThen(SkinCallback second) {
         SkinCallback first = this;
+        if (first == NOOP) return second;
+        if (second == NOOP) return first;
         return (t, i, tex) -> {
             first.onSkinAvailable(t, i, tex);
             second.onSkinAvailable(t, i, tex);

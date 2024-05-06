@@ -85,13 +85,13 @@ public class SkinServerList implements SynchronousResourceReloader, Identifiable
             try {
                 if (!gateway.getServer().getFeatures().contains(Feature.SYNTHETIC)) {
                     gateway.getServer().loadSkins(profileList).forEach(textures -> {
-                        GameProfile profile = profileLookup.get(textures.getProfileId());
+                        GameProfile profile = profileLookup.get(textures.profileId());
                         if (profile == null) {
-                            LOGGER.warn("Server {} sent textures for unrequested profile {}. Ignoring.", gateway.toString(), textures.getProfileId());
+                            LOGGER.warn("Server {} sent textures for unrequested profile {}. Ignoring.", gateway.toString(), textures.profileId());
                         } else {
                             if (result.computeIfAbsent(profile,
                                     p -> new PartialTextures(new HashSet<>(requestedSkinTypes), new HashMap<>()))
-                                    .appendTextures(textures.getTextures())) {
+                                    .appendTextures(textures.textures())) {
                                 profileList.remove(profile);
                                 writeEmbeddedTextures(profile, result.get(profile).textures());
                             }

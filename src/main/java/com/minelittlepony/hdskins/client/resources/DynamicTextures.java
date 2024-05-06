@@ -28,7 +28,7 @@ public class DynamicTextures {
     }
 
     public Optional<MinecraftProfileTexture> getTextureMetadata(SkinType type) {
-        return payload.getTexture(type);
+        return Optional.ofNullable(payload.textures().getOrDefault(type, null));
     }
 
     public Optional<Texture.UriTexture> loadTexture(SkinType type, Identifier def) {

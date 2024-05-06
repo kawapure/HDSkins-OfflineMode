@@ -20,7 +20,7 @@ import com.mojang.authlib.minecraft.InsecurePublicKeyException;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Util;
 
 @ServerType("mojang")
 public class YggdrasilSkinServer implements SkinServer {
@@ -94,10 +94,16 @@ public class YggdrasilSkinServer implements SkinServer {
                     .header(FileTypes.HEADER_ACCEPT, FileTypes.APPLICATION_JSON)
                     .header(FileTypes.HEADER_AUTHORIZATION, "Bearer " + upload.session().accessToken())
                     .build());
-        } else if (upload instanceof SkinUpload.UriUpload) {
-            // TODO yes it does! https://wiki.vg/Mojang_API#Change_Skin
-            // The question is whether it supports non-minecraft urls
-            throw new IOException("Yggdrasil does not support URI uploads");
+        } else if (upload instanceof SkinUpload.UriUpload uriUpload) {
+            // https://wiki.vg/Mojang_API#Change_Skin
+            execute(HttpRequest.newBuilder(URI.create(skinUploadAddress))
+                    .POST(FileTypes.json(mapMetadata(Util.make(uriUpload.metadata(), metadata -> {
+                        metadata.put("url", uriUpload.uri().toString());
+                    }))))
+                    .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.MULTI_PART_FORM_DATA)
+                    .header(FileTypes.HEADER_ACCEPT, FileTypes.APPLICATION_JSON)
+                    .header(FileTypes.HEADER_AUTHORIZATION, "Bearer " + upload.session().accessToken())
+                    .build());
         } else {
             throw new IllegalArgumentException("Unsupported SkinUpload type: " + upload.getClass());
         }
@@ -133,11 +139,10 @@ public class YggdrasilSkinServer implements SkinServer {
     }
 
     @Override
-    public Optional<SkinServerProfile<?>> loadProfile(GameProfile profile) throws IOException, AuthenticationException {
-
+    public Optional<SkinServerProfile<?>> loadProfile(Session session) throws IOException, AuthenticationException {
         MoreHttpResponses response = MoreHttpResponses.execute(HttpRequest.newBuilder(URI.create(activeSkinAddress))
                 .GET()
-                .header(FileTypes.HEADER_AUTHORIZATION, "Bearer " + MinecraftClient.getInstance().getSession().getAccessToken())
+                .header(FileTypes.HEADER_AUTHORIZATION, "Bearer " + session.accessToken())
                 .build());
 
         if (!response.ok()) {
@@ -145,7 +150,8 @@ public class YggdrasilSkinServer implements SkinServer {
         }
 
         ProfileResponse prof = response.json(ProfileResponse.class, "Server send invalid profile response");
-        prof.profile = profile;
+        prof.session = session;
+        prof.server = this;
         return Optional.of(prof);
     }
 
@@ -173,17 +179,19 @@ public class YggdrasilSkinServer implements SkinServer {
         public List<Skin> skins;
         public List<Skin> capes;
 
-        transient GameProfile profile;
+        transient Session session;
+        transient YggdrasilSkinServer server;
 
         static class Skin implements SkinServerProfile.Skin {
             public String id;
             public State state;
             public String url;
-            public String alias;
+            public String textureKey;
+            public String variant;
 
             @Override
             public String getModel() {
-                return alias;
+                return variant;
             }
 
             @Override
@@ -200,11 +208,6 @@ public class YggdrasilSkinServer implements SkinServer {
         enum State {
             ACTIVE,
             INACTIVE
-        }
-
-        @Override
-        public GameProfile getGameProfile() {
-            return profile;
         }
 
         @Override

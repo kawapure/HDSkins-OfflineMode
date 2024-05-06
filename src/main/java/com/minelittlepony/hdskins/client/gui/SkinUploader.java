@@ -26,7 +26,6 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
     public static final Text STATUS_NO_SERVER = Text.translatable("hdskins.error.noserver");
     public static final Text STATUS_OFFLINE = Text.translatable("hdskins.error.offline");
     public static final Text STATUS_SESSION = Text.translatable("hdskins.error.session.short");
-    public static final Text ERR_SESSION = Text.translatable("hdskins.error.session");
 
     public static final Text STATUS_MOJANG = Text.translatable("hdskins.error.mojang");
     public static final Text STATUS_BUSY = Text.translatable("hdskins.status.busy");
@@ -86,6 +85,10 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
         }
     }
 
+    public SkinUpload.Session getSession() {
+        return session;
+    }
+
     public Optional<Gateway> getGateway() {
         return gateway;
     }
@@ -120,7 +123,7 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
 
     private boolean isOnline() {
         return gateway.filter(Gateway::isOnline).isPresent()
-                && getBannerMessage() != ERR_SESSION;
+                && getBannerMessage() != Gateway.ERR_SESSION;
     }
 
     public boolean isBusy() {
@@ -244,7 +247,7 @@ public class SkinUploader implements Closeable, CarouselStatusLabel {
                 .thenAcceptAsync(textures -> {
                     ServerPlayerSkins skins = previewer.getRemote().getSkins();
                     skins.loadTextures(textures, loadListener);
-                    gateway.getProfile(previewer.getProfile()).thenAccept(serverProfile -> {
+                    gateway.getProfile(session).thenAccept(serverProfile -> {
                         skins.loadProfile(serverProfile);
                     });
                 }, MinecraftClient.getInstance())
