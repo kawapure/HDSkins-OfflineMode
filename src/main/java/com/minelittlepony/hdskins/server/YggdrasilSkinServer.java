@@ -40,6 +40,7 @@ public class YggdrasilSkinServer implements SkinServer {
 
     private transient final String skinUploadAddress = address + "/minecraft/profile/skins";
     private transient final String activeSkinAddress = skinUploadAddress + "/active";
+    private transient final String activeCapeAddress = address + "/minecraft/profile/capes/active";
 
     private transient final boolean requireSecure = true;
 
@@ -138,6 +139,13 @@ public class YggdrasilSkinServer implements SkinServer {
         }
     }
 
+    public void setActiveCape(Session session, String capeId) throws IOException, AuthenticationException {
+        authorize(session);
+        execute(HttpRequest.newBuilder(URI.create(activeCapeAddress))
+                .PUT(FileTypes.json(Map.of("capeId", capeId)))
+                .build());
+    }
+
     @Override
     public Optional<SkinServerProfile<?>> loadProfile(Session session) throws IOException, AuthenticationException {
         MoreHttpResponses response = MoreHttpResponses.execute(HttpRequest.newBuilder(URI.create(activeSkinAddress))
@@ -222,8 +230,15 @@ public class YggdrasilSkinServer implements SkinServer {
         }
 
         @Override
-        public void setActive(SkinType type, Skin texture) {
-
+        public void setActive(SkinType type, Skin texture) throws IOException, AuthenticationException {
+            if (texture.state == State.ACTIVE) {
+                return;
+            }
+            getSkins(type).forEach(s -> s.state = State.INACTIVE);
+            texture.state = State.ACTIVE;
+            if (type == SkinType.CAPE) {
+                server.setActiveCape(session, texture.id);
+            }
         }
     }
 }

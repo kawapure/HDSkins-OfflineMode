@@ -94,7 +94,7 @@ public interface SkinServer {
     interface SkinServerProfile<T extends SkinServerProfile.Skin> {
         List<T> getSkins(SkinType type);
 
-        void setActive(SkinType type, T texture);
+        void setActive(SkinType type, T texture) throws IOException, AuthenticationException;
 
         interface Skin {
             String getModel();
