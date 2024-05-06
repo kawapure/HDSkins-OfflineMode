@@ -30,7 +30,7 @@ public class SkinType implements Comparable<SkinType> {
     public static final Registry<SkinType> REGISTRY = Registries.createDefaulted(new Identifier("hdskins", "skin_type"), SkinType::getId, UNKNOWN);
 
     private static final TypeAdapter<SkinType> ADAPTER = RegistryTypeAdapter.of(REGISTRY, (ls, registry) -> {
-        return registry.stream().filter(type -> type.getParameterizedName().equals(ls)).findFirst().orElseGet(() -> createUnsupported(ls));
+        return registry.stream().filter(type -> type.getParameterizedName().equalsIgnoreCase(ls)).findFirst().orElseGet(() -> createUnsupported(ls));
     });
     private static final Map<MinecraftProfileTexture.Type, SkinType> VANILLA = new EnumMap<>(MinecraftProfileTexture.Type.class);
 
@@ -56,6 +56,7 @@ public class SkinType implements Comparable<SkinType> {
         return getId().toString();
     }
 
+    @Deprecated
     public String getParameterizedName() {
         return name().replace(':', '_').replace('/', '_').toLowerCase(Locale.US);
     }
