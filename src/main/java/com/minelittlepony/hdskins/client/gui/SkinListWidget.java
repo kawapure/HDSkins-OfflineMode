@@ -91,7 +91,7 @@ public class SkinListWidget implements Carousel.Element {
         scrollLeft.setVisible(hasContent);
         scrollLeft.setEnabled(hasContent && scrollPosition > 0);
         scrollRight.setVisible(hasContent);
-        scrollRight.setEnabled(hasContent && skins.size() >= pageSize && skins.size() > scrollPosition);
+        scrollRight.setEnabled(hasContent && skins.size() >= pageSize && (skins.size() - pageSize - 1) > scrollPosition);
     }
 
     @Override
@@ -134,13 +134,14 @@ public class SkinListWidget implements Carousel.Element {
         matrices.push();
 
         bounds.translate(matrices);
-        matrices.translate(getScrollOffset(), 0, 0);
-
         context.fill(0, frameWidth, bounds.width, 0, 0xA0000000);
+        matrices.translate(getScrollOffset(), 0, 0);
 
         int index = (int)(mouseX - (bounds.left + getScrollOffset())) / frameWidth;
 
         boolean hovered = bounds.contains(mouseX, mouseY);
+
+        context.enableScissor(bounds.left, bounds.top, bounds.right(), bounds.bottom());
 
         if (hovered && index < skins.size()) {
             context.fill(index * frameWidth, 0, (index + 1) * frameWidth, frameWidth, 0xA0AAAAAA);
@@ -153,7 +154,7 @@ public class SkinListWidget implements Carousel.Element {
                 context.fill((i * frameWidth), 0, ((i + 1) * frameWidth), frameWidth, 0xA0000000);
 
                 if (skin.isReady()) {
-                    player.setOverrideTextures(new PreviousServerPlayerSkins(skin));
+                    player.setOverrideTextures(new PreviousServerPlayerSkins(player.getTextures(), skin));
 
                     float limbD = player.limbAnimator.getSpeed();
                     int y = frameWidth;
@@ -180,6 +181,8 @@ public class SkinListWidget implements Carousel.Element {
                 player.setSneaking(true);
             }
         }
+
+        context.disableScissor();
 
         matrices.pop();
     }

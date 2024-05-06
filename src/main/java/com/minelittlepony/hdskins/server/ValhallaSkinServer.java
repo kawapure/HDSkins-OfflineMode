@@ -165,9 +165,10 @@ public class ValhallaSkinServer implements SkinServer {
         return MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendHistoryUri(session.profile().getId()))
                 .GET()
                 .build()).accept(r -> r.json(Textures.class, "Server sent invalid profile response")).map(p -> {
+                    // TODO: Remove duplicates and sort by upload time
             Function<SkinType, List<Texture>> textures = Util.memoize(type -> {
                 Set<String> visited = new HashSet<>();
-                return p.textures().get(type)
+                return p.textures().getOrDefault(type, List.of())
                         .stream()
                         .filter(texture -> visited.add(texture.url + texture.getModel()))
                         .sorted(Comparator.comparing(t -> -t.startTime))
