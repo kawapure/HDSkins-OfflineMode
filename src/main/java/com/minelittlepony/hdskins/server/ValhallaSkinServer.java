@@ -1,14 +1,12 @@
 package com.minelittlepony.hdskins.server;
 
 import com.google.common.collect.Sets;
-import com.google.gson.reflect.TypeToken;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.SkinUpload.Session;
 import com.minelittlepony.hdskins.util.IndentedToStringStyle;
 import com.minelittlepony.hdskins.util.net.*;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,8 +26,6 @@ public class ValhallaSkinServer implements SkinServer {
             Feature.MODEL_VARIANTS,
             Feature.MODEL_TYPES
     );
-
-    private static final TypeToken<Map<SkinType, MinecraftProfileTexture>> TEXTURE_MAP_TYPE = new TypeToken<>() {};
 
     private final String address;
 
@@ -101,7 +97,7 @@ public class ValhallaSkinServer implements SkinServer {
                         .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
                         .build())
                     .requireOk()
-                    .json(TEXTURE_MAP_TYPE.getType(), "Invalid texture payload")
+                    .json(TexturePayload.Textures.class, "Invalid texture payload")
         ));
     }
 
