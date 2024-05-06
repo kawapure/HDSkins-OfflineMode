@@ -112,7 +112,7 @@ public class ValhallaSkinServer implements SkinServer {
             case SkinUpload.FileUpload fileUpload ->
                     MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("textures"))
                             .PUT(FileTypes.multiPart(fileUpload.metadata())
-                                    .field("type", fileUpload.type())
+                                    .field("type", fileUpload.type().getParameterizedName())
                                     .field("file", fileUpload.file())
                                     .build())
                             .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.MULTI_PART_FORM_DATA)
@@ -122,7 +122,7 @@ public class ValhallaSkinServer implements SkinServer {
                     .requireOk();
             case SkinUpload.UriUpload uriUpload -> MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("textures"))
                             .POST(FileTypes.json(Util.make(new HashMap<>(uriUpload.metadata()), metadata -> {
-                                metadata.put("type", uriUpload.type().toString());
+                                metadata.put("type", uriUpload.type().getParameterizedName());
                                 metadata.put("file", uriUpload.uri().toString());
                             })))
                             .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.APPLICATION_JSON)
