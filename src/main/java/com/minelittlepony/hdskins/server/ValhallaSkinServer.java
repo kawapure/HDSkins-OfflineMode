@@ -105,7 +105,7 @@ public class ValhallaSkinServer implements SkinServer {
     public void uploadSkin(SkinUpload upload) throws IOException, AuthenticationException {
         doAuthorizedRequest(upload.session(), (accessToken) -> switch (upload) {
             case SkinUpload.Delete ignored -> MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("texture"))
-                            .DELETE()
+                            .method("DELETE", FileTypes.json(Map.of("type", upload.type().getParameterizedName())))
                             .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
                             .build())
                     .requireOk();
