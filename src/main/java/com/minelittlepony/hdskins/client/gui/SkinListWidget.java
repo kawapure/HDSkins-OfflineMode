@@ -87,6 +87,9 @@ public class SkinListWidget implements Carousel.Element {
 
         boolean hasContent = !skins.isEmpty();
         int pageSize = bounds.width / bounds.height;
+        if (scrollPosition > Math.max(skins.size() - 1, 0)) {
+            targetScrollPosition = 0;
+        }
 
         scrollLeft.setVisible(hasContent);
         scrollLeft.setEnabled(hasContent && scrollPosition > 0);
