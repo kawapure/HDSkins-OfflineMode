@@ -121,11 +121,11 @@ public class ValhallaSkinServer implements SkinServer {
                             .build())
                     .requireOk();
             case SkinUpload.UriUpload uriUpload -> MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendUri("textures"))
-                            .POST(FileTypes.multiPart(uriUpload.metadata())
-                                    .field("type", uriUpload.type())
-                                    .field("file", uriUpload.uri().toString())
-                                    .build())
-                            .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.MULTI_PART_FORM_DATA)
+                            .POST(FileTypes.json(Util.make(new HashMap<>(uriUpload.metadata()), metadata -> {
+                                metadata.put("type", uriUpload.type().toString());
+                                metadata.put("file", uriUpload.uri().toString());
+                            })))
+                            .header(FileTypes.HEADER_CONTENT_TYPE, FileTypes.APPLICATION_JSON)
                             .header(FileTypes.HEADER_ACCEPT, FileTypes.APPLICATION_JSON)
                             .header(FileTypes.HEADER_AUTHORIZATION, accessToken)
                             .build())
