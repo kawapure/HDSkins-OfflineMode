@@ -7,12 +7,14 @@ import com.minelittlepony.hdskins.util.IndentedToStringStyle;
 import com.minelittlepony.hdskins.util.net.*;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.exceptions.AuthenticationException;
+import net.minecraft.util.Util;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.util.*;
+import java.util.function.Function;
 
 @ServerType("valhalla")
 public class ValhallaSkinServer implements SkinServer {
@@ -41,6 +43,10 @@ public class ValhallaSkinServer implements SkinServer {
 
     private URI buildBackendUserUri(UUID uuid) {
         return buildBackendUri(String.format("user/%s", uuid.toString()));
+    }
+
+    private URI buildBackendHistoryUri(UUID uuid) {
+        return buildBackendUri(String.format("history/%s", uuid.toString()));
     }
 
     @Override
@@ -154,6 +160,34 @@ public class ValhallaSkinServer implements SkinServer {
         accessToken = response.accessToken;
     }
 
+    @Override
+    public Optional<SkinServerProfile<?>> loadProfile(Session session) throws IOException, AuthenticationException {
+        return MoreHttpResponses.execute(HttpRequest.newBuilder(buildBackendHistoryUri(session.profile().getId()))
+                .GET()
+                .build()).accept(r -> r.json(Textures.class, "Server sent invalid profile response")).map(p -> {
+            Function<SkinType, List<Texture>> textures = Util.memoize(type -> {
+                Set<String> visited = new HashSet<>();
+                return p.textures().get(type)
+                        .stream()
+                        .filter(texture -> visited.add(texture.url + texture.getModel()))
+                        .sorted(Comparator.comparing(t -> -t.startTime))
+                        .toList();
+            });
+            return new SkinServerProfile<Texture>() {
+                @Override
+                public List<Texture> getSkins(SkinType type) {
+                    return textures.apply(type);
+                }
+
+                @Override
+                public void setActive(SkinType type, Texture texture) throws IOException, AuthenticationException {
+                    // TODO: Swap active skins rather than upload a copy
+                    uploadSkin(new SkinUpload.UriUpload(session, type, URI.create(texture.getUri()), texture.metadata));
+                }
+            };
+        });
+    }
+
     private interface AuthorizedRequest<T> {
         T doRequest(String accessToken) throws IOException, AuthenticationException;
     }
@@ -218,4 +252,23 @@ public class ValhallaSkinServer implements SkinServer {
 
     private record BulkTextures(List<UUID> uuids) {}
     private record BulkTexturesResponse(List<TexturePayload> users) {}
+
+    // TODO: Response does not match the documentation
+    private record Textures (String profileId, String profilename, Map<SkinType, List<Texture>> textures) {}
+    private record Texture (long startTime, String endTime, Map<String, String> metadata, String url) implements SkinServerProfile.Skin {
+        @Override
+        public String getModel() {
+            return metadata.get("model");
+        }
+
+        @Override
+        public boolean isActive() {
+            return endTime == null || "null".equalsIgnoreCase(endTime);
+        }
+
+        @Override
+        public String getUri() {
+            return url;
+        }
+    }
 }

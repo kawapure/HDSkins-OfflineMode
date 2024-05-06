@@ -15,6 +15,7 @@ import java.lang.reflect.Type;
 import java.net.http.*;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -88,5 +89,13 @@ public interface MoreHttpResponses {
             throw HttpException.of(this);
         }
         return this;
+    }
+
+    default <T> Optional<T> accept(Untrusted<MoreHttpResponses, T> function) throws IOException {
+        return ok() ? Optional.of(function.apply(this)) : Optional.empty();
+    }
+
+    interface Untrusted<A, B> {
+        B apply(A a) throws IOException;
     }
 }

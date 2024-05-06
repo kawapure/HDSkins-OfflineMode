@@ -85,7 +85,7 @@ public class ServerPlayerSkins extends PlayerSkins<ServerPlayerSkins.RemoteTextu
 
         @Override
         public Identifier getId() {
-            return texture != null ? blank.get() : texture.filter(Texture::isLoaded).map(Texture::getId).orElseGet(blank);
+            return texture.filter(Texture::isLoaded).map(Texture::getId).orElseGet(blank);
         }
 
         @Override
