@@ -7,6 +7,7 @@ import com.minelittlepony.common.client.gui.dimension.Bounds;
 import com.minelittlepony.common.client.gui.element.Button;
 import com.minelittlepony.common.client.gui.element.Cycler;
 import com.minelittlepony.common.client.gui.element.Label;
+import com.minelittlepony.common.client.gui.sprite.ItemStackSprite;
 import com.minelittlepony.common.client.gui.sprite.TextureSprite;
 import com.minelittlepony.common.client.gui.style.Style;
 import com.minelittlepony.hdskins.client.HDSkins;
@@ -25,6 +26,7 @@ import net.minecraft.client.resource.language.I18n;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -270,7 +272,25 @@ public class GuiSkins extends GameGui {
         if (btnSkinType != null) {
             List<SkinType> types = uploader.getSupportedSkinTypes().toList();
             btnSkinType
-                .setStyles(types.stream().map(SkinType::getStyle).toArray(Style[]::new))
+                .setStyles(types.stream().map(type -> {
+                    if (type.isUnsupported()) {
+                        return new Style()
+                                .setIcon(new TextureSprite()
+                                        .setTexture(SkinType.UNKNOWN.icon())
+                                        .setPosition(2, 2)
+                                        .setSize(16, 16)
+                                        .setTextureSize(16, 16))
+                                .setText(Text.translatable("skin_type.hdskins.unknown", type.getId().toString()))
+                                .setTooltip(type.getId().toString(), 0, 10);
+                    }
+
+                    return new Style()
+                            .setIcon(MinecraftClient.getInstance().getResourceManager().getResource(type.icon()).isEmpty()
+                                    ? new ItemStackSprite().setStack(type.iconStack())
+                                    : new TextureSprite().setTexture(type.icon()).setPosition(2, 2).setSize(16, 16).setTextureSize(16, 16))
+                            .setText(Text.translatable("hdskins.skin_type", Text.translatable(Util.createTranslationKey("skin_type", type.getId()))))
+                            .setTooltip(type.getId().toString(), 0, 10);
+                }).toArray(Style[]::new))
                 .setValue(Math.max(0, types.indexOf(previewer.getActiveSkinType())));
         }
     }

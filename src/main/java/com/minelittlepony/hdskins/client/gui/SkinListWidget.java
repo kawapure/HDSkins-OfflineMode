@@ -14,7 +14,6 @@ import com.minelittlepony.hdskins.client.gui.player.DummyPlayer;
 import com.minelittlepony.hdskins.client.gui.player.DummyWorld;
 import com.minelittlepony.hdskins.client.gui.player.skins.PlayerSkins;
 import com.minelittlepony.hdskins.client.gui.player.skins.PreviousServerPlayerSkins;
-import com.minelittlepony.hdskins.client.gui.player.skins.ServerPlayerSkins.Skin;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -83,7 +82,7 @@ public class SkinListWidget implements Carousel.Element {
     }
 
     private void updateButtons() {
-        List<Skin> skins = previewer.getRemote().getSkins().getProfileSkins(previewer.getActiveSkinType());
+        List<PreviousServerPlayerSkins> skins = previewer.getRemote().getSkins().getProfileSkins(previewer.getActiveSkinType());
 
         boolean hasContent = !skins.isEmpty();
         int pageSize = bounds.width / bounds.height;
@@ -120,7 +119,7 @@ public class SkinListWidget implements Carousel.Element {
 
         updateButtons();
 
-        List<Skin> skins = previewer.getRemote().getSkins().getProfileSkins(previewer.getActiveSkinType());
+        List<PreviousServerPlayerSkins> skins = previewer.getRemote().getSkins().getProfileSkins(previewer.getActiveSkinType());
         if (skins.isEmpty()) {
             return;
         }
@@ -138,7 +137,7 @@ public class SkinListWidget implements Carousel.Element {
 
         bounds.translate(matrices);
         context.fill(0, frameWidth, bounds.width, 0, 0xA0000000);
-        matrices.translate(getScrollOffset(), 0, 0);
+        matrices.translate(getScrollOffset(), 0, 200);
 
         int index = (int)(mouseX - (bounds.left + getScrollOffset())) / frameWidth;
 
@@ -152,12 +151,12 @@ public class SkinListWidget implements Carousel.Element {
 
         try {
             for (int i = 0; i < skins.size(); i++) {
-                Skin skin = skins.get(i);
+                PreviousServerPlayerSkins skin = skins.get(i);
 
                 context.fill((i * frameWidth), 0, ((i + 1) * frameWidth), frameWidth, 0xA0000000);
 
-                if (skin.isReady()) {
-                    player.setOverrideTextures(new PreviousServerPlayerSkins(player.getTextures(), skin));
+                if (previewer.getActiveSkinType() == skin.getType()) {
+                    player.setOverrideTextures(skin);
 
                     float limbD = player.limbAnimator.getSpeed();
                     int y = frameWidth;
@@ -166,11 +165,18 @@ public class SkinListWidget implements Carousel.Element {
                         player.limbAnimator.setSpeed(1);
                     }
 
-                    renderPlayerModel(matrices, player, (i * frameWidth) + frameWidth / 2, y, 13);
+                    if (skin.getType().isUnsupported()) {
+                        context.drawTexture(skin.get(skin.getType()).getId(), (i * frameWidth), 0, 0, 0, frameWidth, frameWidth, 64, 64);
+                    } else {
+                        matrices.push();
+                        matrices.translate(0, 0, -400);
+                        renderPlayerModel(matrices, player, (i * frameWidth) + frameWidth / 2, y, 13);
+                        matrices.pop();
+                    }
                     player.limbAnimator.setSpeed(limbD);
                 }
 
-                if (skin.active()) {
+                if (skin.getSkin().isActive()) {
                     context.fill((i * frameWidth), 1, (i * frameWidth) + 1, frameWidth, 0xFFFFFFFF);
                     context.fill(((i + 1) * frameWidth), 1, ((i + 1) * frameWidth) - 1, frameWidth, 0xFFFFFFFF);
                     context.fill((i * frameWidth), frameWidth - 1, ((i + 1) * frameWidth), frameWidth, 0xFFFFFFFF);
