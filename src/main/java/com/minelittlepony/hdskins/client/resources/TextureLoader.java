@@ -63,7 +63,7 @@ public class TextureLoader {
                 .filter(i -> i != null && i != image)), CLIENT)
         .thenApplyAsync(updated -> {
             return updated.map(image -> {
-                Identifier convertedId = new Identifier(imageId.getNamespace(), "dynamic/" + id + "/" + imageId.getPath());
+                Identifier convertedId = imageId.withPath(p -> "dynamic/" + id + "/" + p);
                 CLIENT.getTextureManager().registerTexture(convertedId, new NativeImageBackedTexture(image));
                 return convertedId;
             }).orElse(imageId);

@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.*;
 
+import com.minelittlepony.hdskins.client.HDSkins;
 import com.minelittlepony.hdskins.client.VanillaModels;
 import com.minelittlepony.hdskins.client.gui.player.skins.PlayerSkins.Posture.SkinVariant;
 import com.minelittlepony.hdskins.client.resources.HDPlayerSkinTexture;
@@ -49,7 +50,7 @@ public class LocalPlayerSkins extends PlayerSkins<LocalPlayerSkins.LocalTexture>
 
         public LocalTexture(SkinType type, Supplier<Identifier> blank) {
             this.type = type;
-            id = new Identifier("hdskins", "generated_preview/" + getPosture().getProfile().getId().toString() + "/" + type.getPathName());
+            id = HDSkins.id("generated_preview/" + getPosture().getProfile().getId().toString() + "/" + type.getPathName());
             defaultTexture = blank;
         }
 

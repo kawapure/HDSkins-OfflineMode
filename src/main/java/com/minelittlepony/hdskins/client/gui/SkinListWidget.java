@@ -78,7 +78,7 @@ public class SkinListWidget implements Carousel.Element {
     }
 
     private float getScrollOffset() {
-        return -MathHelper.lerp(MinecraftClient.getInstance().getTickDelta(), prevScrollPosition, scrollPosition) * bounds.height;
+        return -MathHelper.lerp(MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false), prevScrollPosition, scrollPosition) * bounds.height;
     }
 
     private void updateButtons() {

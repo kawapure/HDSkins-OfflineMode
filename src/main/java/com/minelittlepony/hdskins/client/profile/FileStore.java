@@ -37,7 +37,7 @@ class FileStore {
     private CompletableFuture<Identifier> store(SkinType type, MinecraftProfileTexture texture) {
         @SuppressWarnings("deprecation")
         String hash = Hashing.sha1().hashUnencodedChars(texture.getHash()).toString();
-        Identifier id = new Identifier("hdskins", type.getPathName() + "/" + hash);
+        Identifier id = HDSkins.id(type.getPathName() + "/" + hash);
         Path path = getHDSkinsCache().resolve(type.getPathName()).resolve(hash.length() > 2 ? hash.substring(0, 2) : "xx").resolve(hash);
         CompletableFuture<Identifier> future = new CompletableFuture<>();
         TextureLoader.loadTexture(id, new HDPlayerSkinTexture(

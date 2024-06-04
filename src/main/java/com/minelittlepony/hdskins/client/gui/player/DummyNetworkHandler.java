@@ -22,6 +22,7 @@ import net.minecraft.network.NetworkSide;
 import net.minecraft.registry.*;
 import net.minecraft.resource.*;
 import net.minecraft.resource.featuretoggle.FeatureSet;
+import net.minecraft.server.ServerLinks;
 
 interface DummyNetworkHandler {
     Supplier<ClientPlayNetworkHandler> INSTANCE = Suppliers.memoize(() -> new ClientPlayNetworkHandler(MinecraftClient.getInstance(), new ClientConnection(NetworkSide.CLIENTBOUND), createConnectionState()));
@@ -34,7 +35,7 @@ interface DummyNetworkHandler {
                 FeatureSet.empty(),
                 (String)null,
                 (ServerInfo)null,
-                (Screen)null, new HashMap<>(), null, false
+                (Screen)null, new HashMap<>(), null, false, new HashMap<>(), ServerLinks.EMPTY
         );
     }
 

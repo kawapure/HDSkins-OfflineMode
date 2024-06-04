@@ -185,8 +185,8 @@ public abstract class PlayerSkins<T extends PlayerSkins.PlayerSkin> implements C
 
         public record SkinVariant (Text tooltip, ISprite icon, String name) {
             public static final Set<SkinVariant> VALUES = new HashSet<>();
-            public static final SkinVariant DEFAULT = new SkinVariant(new Identifier("hdskins", VanillaModels.DEFAULT));
-            public static final SkinVariant SLIM = new SkinVariant(new Identifier("hdskins", VanillaModels.SLIM));
+            public static final SkinVariant DEFAULT = new SkinVariant(HDSkins.id(VanillaModels.DEFAULT));
+            public static final SkinVariant SLIM = new SkinVariant(HDSkins.id(VanillaModels.SLIM));
 
             public SkinVariant(Identifier id) {
                 this(

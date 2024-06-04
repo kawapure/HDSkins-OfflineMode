@@ -357,7 +357,7 @@ public class GuiSkins extends GameGui {
 
     @Override
     protected void renderPanoramaBackground(DrawContext context, float delta) {
-        panorama.render(context, this.width, this.height, 1.0F, this.getPanoramaTickDelta());
+        panorama.render(context, this.width, this.height, 1.0F, delta);
     }
 
     @Override

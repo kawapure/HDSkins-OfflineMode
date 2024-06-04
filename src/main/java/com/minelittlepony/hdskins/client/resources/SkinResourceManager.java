@@ -48,7 +48,7 @@ import net.minecraft.util.profiler.Profiler;
  */
 public class SkinResourceManager implements IdentifiableResourceReloadListener {
 
-    private static final Identifier ID = new Identifier("hdskins", "skins");
+    private static final Identifier ID = HDSkins.id("skins");
 
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -76,7 +76,7 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
 
             textures.invalidateAll();
 
-            sender.getAllNamespaces().stream().map(domain -> new Identifier(domain, "textures/skins/skins.json")).forEach(identifier -> {
+            sender.getAllNamespaces().stream().map(domain -> Identifier.of(domain, "textures/skins/skins.json")).forEach(identifier -> {
                 sender.getAllResources(identifier).stream()
                     .map(this::loadSkinData)
                     .filter(Optional::isPresent)
@@ -256,10 +256,10 @@ public class SkinResourceManager implements IdentifiableResourceReloadListener {
                         skin += ".png";
                     }
                     if (skin.indexOf(':') == -1) {
-                        return new Identifier("hdskins", skin);
+                        return HDSkins.id(skin);
                     }
 
-                    return new Identifier(skin);
+                    return Identifier.of(skin);
                 }
 
                 return HDSkins.id(String.format("textures/skins/%s.png", skin));

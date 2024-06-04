@@ -44,7 +44,7 @@ public class PreviousServerPlayerSkins extends PlayerSkins<ServerPlayerSkins.Rem
             String uri = skin.getUri();
             String hash = String.valueOf(uri.hashCode());
 
-            Identifier id = new Identifier("hdskins", String.format("dynamic/%s/%s", type.getId().getPath(), hash));
+            Identifier id = HDSkins.id(String.format("dynamic/%s/%s", type.getId().getPath(), hash));
 
             return new RemoteTexture(blank, Optional.of(TextureLoader.loadTexture(id, Texture.UriTexture.create(id, DynamicTextures.createTempFile(hash), uri, type, model, blank.get(), null))), skin.isActive());
         }

@@ -37,7 +37,7 @@ public class EquipmentList extends JsonDataLoader implements IdentifiableResourc
     private static final Identifier EMPTY = HDSkins.id("empty");
 
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Identifier.class, new ToStringAdapter<>(Identifier::new))
+            .registerTypeAdapter(Identifier.class, new ToStringAdapter<>(Identifier::of))
             .registerTypeAdapter(Item.class, RegistryTypeAdapter.of(Registries.ITEM))
             .registerTypeAdapter(SoundEvent.class, RegistryTypeAdapter.of(Registries.SOUND_EVENT))
             .registerTypeAdapter(EquipmentSlot.class, new ToStringAdapter<>(EquipmentSlot::getName, s -> EquipmentSlot.byName(s.toLowerCase())))

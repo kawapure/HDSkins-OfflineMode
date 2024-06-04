@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import com.google.gson.TypeAdapter;
 import com.minelittlepony.common.util.registry.RegistryTypeAdapter;
+import com.minelittlepony.hdskins.client.HDSkins;
 import com.minelittlepony.common.util.registry.Registries;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 
@@ -18,8 +19,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.registry.Registry;
 
 public class SkinType implements Comparable<SkinType> {
-    public static final SkinType UNKNOWN = new SkinType(new Identifier("hdskins", "unknown"), ItemStack.EMPTY, false);
-    public static final Registry<SkinType> REGISTRY = Registries.createDefaulted(new Identifier("hdskins", "skin_type"), SkinType::getId, UNKNOWN);
+    public static final SkinType UNKNOWN = new SkinType(HDSkins.id("unknown"), ItemStack.EMPTY, false);
+    public static final Registry<SkinType> REGISTRY = Registries.createDefaulted(HDSkins.id("skin_type"), SkinType::getId, UNKNOWN);
 
     private static final TypeAdapter<SkinType> ADAPTER = RegistryTypeAdapter.of(REGISTRY, (ls, registry) -> {
         return registry.stream().filter(type -> type.getParameterizedName().equalsIgnoreCase(ls)).findFirst().orElseGet(() -> createUnsupported(ls));
@@ -124,7 +125,7 @@ public class SkinType implements Comparable<SkinType> {
     private static Identifier deParameterize(String parameterizedName) {
         String[] parts = parameterizedName.split("_", 2);
         parts[1] = parts[1].replace('_', '/');
-        return new Identifier(parts[0], parts[1]);
+        return Identifier.of(parts[0], parts[1]);
     }
 
     public static SkinType register(Identifier id, ItemStack iconStack) {
@@ -149,7 +150,7 @@ public class SkinType implements Comparable<SkinType> {
         private final Optional<MinecraftProfileTexture.Type> vanilla;
 
         VanillaType(MinecraftProfileTexture.Type vanilla, ItemStack iconStack) {
-            super(new Identifier(vanilla.name().toLowerCase(Locale.US)), iconStack, false);
+            super(Identifier.ofVanilla(vanilla.name().toLowerCase(Locale.US)), iconStack, false);
             this.vanilla = Optional.of(vanilla);
             Registry.register(REGISTRY, getId(), this);
         }

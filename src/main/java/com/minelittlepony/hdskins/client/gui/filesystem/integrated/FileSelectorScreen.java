@@ -33,7 +33,7 @@ import net.minecraft.util.Identifier;
 
 public class FileSelectorScreen extends GameGui implements FileDialog {
 
-    private static final Identifier ICONS = new Identifier("hdskins", "textures/gui/files.png");
+    private static final Identifier ICONS = HDSkins.id("textures/gui/files.png");
 
     private static final TextureSprite FOLDER = new TextureSprite();
     private static final TextureSprite FILE = new TextureSprite() .setTextureOffset( 0, 14);

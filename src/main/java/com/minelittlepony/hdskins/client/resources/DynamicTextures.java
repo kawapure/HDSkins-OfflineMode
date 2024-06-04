@@ -1,5 +1,6 @@
 package com.minelittlepony.hdskins.client.resources;
 
+import com.minelittlepony.hdskins.client.HDSkins;
 import com.minelittlepony.hdskins.profile.SkinCallback;
 import com.minelittlepony.hdskins.profile.SkinType;
 import com.minelittlepony.hdskins.server.TexturePayload;
@@ -33,7 +34,7 @@ public class DynamicTextures {
 
     public Optional<Texture.UriTexture> loadTexture(SkinType type, Identifier def) {
         return getTextureMetadata(type).map(texture -> {
-            Identifier id = new Identifier("hdskins", String.format("dynamic/%s/%s", type.getId().getPath(), texture.getHash()));
+            Identifier id = HDSkins.id(String.format("dynamic/%s/%s", type.getId().getPath(), texture.getHash()));
             return TextureLoader.loadTexture(id, Texture.UriTexture.create(id, createTempFile(texture.getHash()), texture.getUrl(), type, texture.getMetadata("model"), def, () -> {
                 loadCallback.onSkinAvailable(type, id, texture);
             }));
