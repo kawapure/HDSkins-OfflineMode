@@ -194,7 +194,7 @@ public class ValhallaSkinServer implements SkinServer {
     }
 
     private <T> T doAuthorizedRequest(Session session, AuthorizedRequest<T> requester) throws IOException, AuthenticationException {
-        authorize(session);
+        //authorize(session);
         try {
             return requester.doRequest(accessToken);
         } catch (HttpException e) {
@@ -203,7 +203,7 @@ public class ValhallaSkinServer implements SkinServer {
             }
 
             accessToken = null;
-            authorize(session);
+            //authorize(session);
             return requester.doRequest(accessToken);
         } catch (IOException e) {
             if (e.getMessage().equals("Authorization failed")) {

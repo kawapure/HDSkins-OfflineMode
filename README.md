@@ -1,19 +1,18 @@
-HD Skins
+HD Skins (Offline Mode)
 ========
 
-[![Current Version](https://img.shields.io/github/v/release/MineLittlePony/HDSkins)](https://github.com/MineLittlePony/HdSkins/releases/latest)
-[![Build Status](https://github.com/MineLittlePony/HDSkins/actions/workflows/gradle-build.yml/badge.svg)](https://github.com/MineLittlePony/HDSkins/actions/workflows/gradle-build.yml)
-[![Jitpack](https://jitpack.io/v/MineLittlePony/HDSkins.svg)](https://jitpack.io/#MineLittlePony/HDSkins)
-[![Modrinth](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.modrinth.com%2Fv2%2Fproject%2Fhd-skins%2Fversion&query=%24%5B0%5D.version_number&label=modrinth)](https://modrinth.com/mod/hd-skins)
-![Downloads](https://img.shields.io/github/downloads/MineLittlePony/HDSkins/total.svg?color=yellowgreen)
 ![License](https://img.shields.io/github/license/MineLittlePony/HDSkins)
 ![](https://img.shields.io/badge/api-fabric-orange.svg)
 
 The Minecraft HDSkins mod from the VoxelModPack.
 
+This is an offline-mode modification which doesn't require connection to a third-party skin server. I made it for local co-op purposes, but you might find it otherwise useful.
+
+Skins are stored in the user/home folder (i.e. `C:\Users\your username\hdskins_offline.json`). This path is currently hardcoded.
+
 ## Building
 
-1. JDK 8 is required. Install it using https://adoptopenjdk.net/
+1. Some JDK version way greater than 8 is required. The official documentation is outdated. Install it using https://adoptopenjdk.net/
 
 2. Open a terminal window in the same directory as the sources (git clone or extracted from zip). Run the following command (windows).
 
@@ -23,8 +22,4 @@ gradlew build
 
 3. After some time, the built mod will be in `/build/libs`.
 
-## Installation (Modders):
-
-Maven: `https://repo.minelittlepony-mod.com/maven/snapshot`
-
-Dependency: `com.minelittlepony:HDSkins:<version>`
+By the way, I did not have luck with the official build.gradle. I had to comment out half of it to make it work.

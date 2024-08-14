@@ -7,7 +7,7 @@ plugins {
     id 'fabric-loom' version '1.6-SNAPSHOT'
     id 'maven-publish'
     id 'com.modrinth.minotaur' version '2.+'
-    id 'org.ajoberstar.reckon' version '0.13.0'
+    //id 'org.ajoberstar.reckon' version '0.13.0'
 }
 apply plugin: 'dex.plugins.outlet'
 
@@ -23,16 +23,16 @@ outlet.mcVersionRange = ">=${project.minecraft_version}"
 
 group = project.group
 description = project.displayname
-archivesBaseName = project.name
+//archivesBaseName = project.name
 
 loom {
     mixin.defaultRefmapName = "hdskins.mixin.refmap.json"
 }
 
-reckon {
-    scopeFromProp()
-    stageFromProp('beta', 'rc', 'final')
-}
+// reckon {
+//     scopeFromProp()
+//     stageFromProp('beta', 'rc', 'final')
+// }
 
 repositories {
     mavenLocal()
@@ -80,68 +80,68 @@ tasks.modrinth {
     }
 }
 
-modrinth {
-    token = System.env.MODRINTH_KEY
-    projectId = project.modrinth_project_id
-    //featured = true
-    versionNumber = version.toString()
-    versionName = archivesBaseName + '-' + version
-    changelog = "[Changelog](https://github.com/MineLittlePony/HDSkins/releases/tag/${version.toString()})"
-    loaders = ['fabric', 'quilt']
-    uploadFile = remapJar
-    outlet.mcVersions().each{ver ->
-      gameVersions.add ver
-    }
-    dependencies {
-       required.project 'P7dR8mSH' // Fabric-Api
-       required.project '9aNz8Zqn' // Kirin
-    }
-}
+// modrinth {
+//     token = System.env.MODRINTH_KEY
+//     projectId = project.modrinth_project_id
+//     //featured = true
+//     versionNumber = version.toString()
+//     //versionName = archivesBaseName + '-' + version
+//     changelog = "[Changelog](https://github.com/MineLittlePony/HDSkins/releases/tag/${version.toString()})"
+//     loaders = ['fabric', 'quilt']
+//     uploadFile = remapJar
+//     outlet.mcVersions().each{ver ->
+//       gameVersions.add ver
+//     }
+//     dependencies {
+//        required.project 'P7dR8mSH' // Fabric-Api
+//        required.project '9aNz8Zqn' // Kirin
+//     }
+// }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
+// publishing {
+//     publications {
+//         maven(MavenPublication) {
+//             from components.java
 
-            pom {
-                name = "HDSkins"
-                description = "High resolution skins for Minecraft"
-                url = "https://minelittlepony-mod.com"
-                licenses {
-                    license {
-                        name = "MIT Public License"
-                        url = "https://tlo.mit.edu/learn-about-intellectual-property/software-and-open-source-licensing"
+//             pom {
+//                 name = "HDSkins"
+//                 description = "High resolution skins for Minecraft"
+//                 url = "https://minelittlepony-mod.com"
+//                 licenses {
+//                     license {
+//                         name = "MIT Public License"
+//                         url = "https://tlo.mit.edu/learn-about-intellectual-property/software-and-open-source-licensing"
 
-                    }
-                }
-                developers {
-                    developer {
-                        id = "killjoy1221"
-                        name = "Matthew Messinger"
-                        email = "mattmess1221@gmail.com"
-                    }
-                    developer {
-                        id = "sollace"
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/MineLittlePony/HDSkins.git'
-                    developerConnection = 'scm:git:ssh://github.com/MineLittlePony/HDSkins.git'
-                    url = 'https://github.com/MineLittlePony/HDSkins'
-                }
-            }
-        }
-    }
+//                     }
+//                 }
+//                 developers {
+//                     developer {
+//                         id = "killjoy1221"
+//                         name = "Matthew Messinger"
+//                         email = "mattmess1221@gmail.com"
+//                     }
+//                     developer {
+//                         id = "sollace"
+//                     }
+//                 }
+//                 scm {
+//                     connection = 'scm:git:git://github.com/MineLittlePony/HDSkins.git'
+//                     developerConnection = 'scm:git:ssh://github.com/MineLittlePony/HDSkins.git'
+//                     url = 'https://github.com/MineLittlePony/HDSkins'
+//                 }
+//             }
+//         }
+//     }
 
-    repositories {
-        maven {
-            name = "MineLittlePony"
-            def stage = version.version.stage.value
-            url = "s3://repo.minelittlepony-mod.com/maven/${stage != null && stage.name == 'beta' ? 'snapshot' : 'release'}"
-            credentials(AwsCredentials) {
-                accessKey = System.env.ACCESS_KEY
-                secretKey = System.env.SECRET_KEY
-            }
-        }
-    }
-}
+//     repositories {
+//         maven {
+//             name = "MineLittlePony"
+//             def stage = version.version.stage.value
+//             url = "s3://repo.minelittlepony-mod.com/maven/${stage != null && stage.name == 'beta' ? 'snapshot' : 'release'}"
+//             credentials(AwsCredentials) {
+//                 accessKey = System.env.ACCESS_KEY
+//                 secretKey = System.env.SECRET_KEY
+//             }
+//         }
+//     }
+// }
